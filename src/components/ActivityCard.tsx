@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { DEMO_PLACES, DEMO_USERS } from '../data/demo';
 import type { Checkin } from '../data/demo';
+import { colors } from '../theme';
 import { formatRelative } from '../utils/time';
 
 type Props = {
@@ -30,20 +31,20 @@ export function ActivityCard({ checkin, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 14,
     marginHorizontal: 16,
     marginVertical: 6,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   name: { fontWeight: '700', fontSize: 16, marginBottom: 2 },
-  action: { fontSize: 15, color: '#333', marginBottom: 4 },
-  meta: { fontSize: 12, color: '#666', marginBottom: 2 },
-  time: { fontSize: 11, color: '#999' },
-  rating: { fontSize: 12, color: '#f59e0b', marginTop: 4 },
+  action: { fontSize: 15, color: colors.black, marginBottom: 4 },
+  meta: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
+  time: { fontSize: 11, color: colors.textMuted },
+  rating: { fontSize: 12, color: colors.accent, marginTop: 4 },
 });

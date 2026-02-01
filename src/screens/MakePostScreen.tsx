@@ -12,6 +12,7 @@ import { AppHeader } from '../components/AppHeader';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { useStore } from '../state/store';
 import { POINTS_POST } from '../state/store';
+import { colors } from '../theme';
 
 const WIDE_BREAKPOINT = 600;
 
@@ -91,7 +92,7 @@ export function MakePostScreen() {
           value={what}
           onChangeText={setWhat}
           placeholder="e.g. Coffee at The Hive"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.placeholder}
         />
       </View>
       <View style={styles.section}>
@@ -101,7 +102,7 @@ export function MakePostScreen() {
           value={whoWith}
           onChangeText={setWhoWith}
           placeholder="e.g. Alex, Sam"
-          placeholderTextColor="#999"
+          placeholderTextColor={colors.placeholder}
         />
       </View>
       {!isWide && (
@@ -147,7 +148,7 @@ export function MakePostScreen() {
             value={experience}
             onChangeText={setExperience}
             placeholder="How was it?"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.placeholder}
             multiline
           />
         </View>
@@ -170,7 +171,7 @@ export function MakePostScreen() {
               value={customTagInput}
               onChangeText={(v) => setCustomTagInput(v.slice(0, MAX_TAG_LENGTH))}
               placeholder="Add your own tag"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.placeholder}
               onSubmitEditing={addCustomTag}
               returnKeyType="done"
             />
@@ -230,7 +231,7 @@ export function MakePostScreen() {
 
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   wideRow: { flex: 1, flexDirection: 'row' },
   formScroll: { flex: 1, minWidth: 280 },
@@ -240,110 +241,110 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 32,
     borderLeftWidth: 1,
-    borderLeftColor: '#e5e5e5',
-    backgroundColor: '#fff',
+    borderLeftColor: colors.border,
+    backgroundColor: colors.white,
   },
-  calendarPanelLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 12 },
+  calendarPanelLabel: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 12 },
   content: { padding: 16, paddingBottom: 32 },
   section: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 8 },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
+    borderColor: colors.border,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  ratingRow: { flexDirection: 'row', gap: 8 },
+  ratingRow: { flexDirection: 'row', gap: 8, width: '100%' },
   ratingBtn: {
-    width: 40,
+    flex: 1,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ratingBtnActive: { backgroundColor: '#facc15', borderColor: '#eab308' },
-  ratingText: { fontSize: 16, fontWeight: '600', color: '#333' },
-  ratingTextActive: { color: '#1a1a2e' },
+  ratingBtnActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  ratingText: { fontSize: 16, fontWeight: '600', color: colors.black },
+  ratingTextActive: { color: colors.white },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tagChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
+    borderColor: colors.border,
   },
-  tagChipActive: { backgroundColor: '#1a1a2e' },
-  tagChipText: { fontSize: 14, color: '#333' },
-  tagChipTextActive: { fontSize: 14, color: '#fff', fontWeight: '600' },
+  tagChipActive: { backgroundColor: colors.black },
+  tagChipText: { fontSize: 14, color: colors.black },
+  tagChipTextActive: { fontSize: 14, color: colors.white, fontWeight: '600' },
   customTagRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   customTagInput: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
+    borderColor: colors.border,
   },
   addTagBtn: {
-    backgroundColor: '#facc15',
+    backgroundColor: colors.accent,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
   },
-  addTagBtnText: { fontSize: 14, fontWeight: '700', color: '#1a1a2e' },
-  addTagBtnTextDisabled: { color: '#999' },
+  addTagBtnText: { fontSize: 14, fontWeight: '700', color: colors.white },
+  addTagBtnTextDisabled: { color: colors.textMuted },
   tagChipCustom: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#e0e7ff',
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: '#a5b4fc',
+    borderColor: colors.accent,
   },
-  tagChipCustomText: { fontSize: 14, color: '#4338ca' },
+  tagChipCustomText: { fontSize: 14, color: colors.accent },
   pointsToast: {
     position: 'absolute',
     bottom: 32,
     left: 16,
     right: 16,
-    backgroundColor: '#059669',
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
-  pointsToastText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  pointsToastText: { fontSize: 16, fontWeight: '700', color: colors.white },
   uploadBtn: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderWidth: 2,
-    borderColor: '#e5e5e5',
+    borderColor: colors.border,
     borderStyle: 'dashed',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 20,
   },
-  uploadBtnText: { fontSize: 16, color: '#666', fontWeight: '500' },
+  uploadBtnText: { fontSize: 16, color: colors.textMuted, fontWeight: '500' },
   saveBtn: {
-    backgroundColor: '#facc15',
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
-  saveBtnDisabled: { backgroundColor: '#d4d4d4', opacity: 0.8 },
-  saveBtnText: { fontSize: 18, fontWeight: '700', color: '#1a1a2e' },
+  saveBtnDisabled: { backgroundColor: colors.textMuted, opacity: 0.8 },
+  saveBtnText: { fontSize: 18, fontWeight: '700', color: colors.white },
 });

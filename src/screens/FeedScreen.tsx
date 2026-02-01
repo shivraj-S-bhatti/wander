@@ -3,6 +3,7 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { ActivityCard } from '../components/ActivityCard';
 import { DEMO_CHECKINS, DEMO_PLACES } from '../data/demo';
+import { colors } from '../theme';
 
 const checkins = [...DEMO_CHECKINS].sort((a, b) => b.ts - a.ts);
 
@@ -31,7 +32,7 @@ export function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  title: { fontSize: 22, fontWeight: '700', padding: 16, paddingBottom: 8 },
+  container: { flex: 1, backgroundColor: colors.background },
+  title: { fontSize: 22, fontWeight: '700', padding: 16, paddingBottom: 8, color: colors.black },
   list: { paddingBottom: 24 },
 });

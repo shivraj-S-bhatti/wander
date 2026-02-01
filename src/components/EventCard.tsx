@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { formatDate, formatTime } from '../utils/time';
+import { colors } from '../theme';
 
 type Event = {
   id: string;
@@ -16,11 +17,12 @@ type Props = {
   event: Event;
   joined: boolean;
   onJoin: () => void;
+  elevated?: boolean;
 };
 
-export function EventCard({ event, joined, onJoin }: Props) {
+export function EventCard({ event, joined, onJoin, elevated }: Props) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, elevated && styles.cardElevated]}>
       <Text style={styles.title}>{event.title}</Text>
       <Text style={styles.desc}>{event.description}</Text>
       <Text style={styles.meta}>
@@ -41,23 +43,29 @@ export function EventCard({ event, joined, onJoin }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 14,
     marginHorizontal: 16,
     marginVertical: 6,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
+  cardElevated: {
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   title: { fontWeight: '700', fontSize: 16, marginBottom: 6 },
-  desc: { fontSize: 14, color: '#555', marginBottom: 8 },
-  meta: { fontSize: 12, color: '#666', marginBottom: 8 },
+  desc: { fontSize: 14, color: colors.textMuted, marginBottom: 8 },
+  meta: { fontSize: 12, color: colors.textMuted, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  points: { fontSize: 12, color: '#059669', fontWeight: '600' },
-  btn: { backgroundColor: '#facc15', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  btnText: { color: '#1a1a2e', fontWeight: '600' },
-  joined: { fontSize: 12, color: '#059669', fontWeight: '600' },
+  points: { fontSize: 12, color: colors.accent, fontWeight: '600' },
+  btn: { backgroundColor: colors.accent, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  btnText: { color: colors.white, fontWeight: '600' },
+  joined: { fontSize: 12, color: colors.accent, fontWeight: '600' },
 });

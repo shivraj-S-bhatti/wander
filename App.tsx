@@ -2,8 +2,10 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { StoreProvider } from './src/state/store';
+import { colors } from './src/theme';
 import { MakePostScreen } from './src/screens/MakePostScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { CommunityScreen } from './src/screens/CommunityScreen';
@@ -24,17 +26,45 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#b45309',
-        tabBarInactiveTintColor: '#999',
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         headerShown: false,
         tabBarStyle: { height: 64, paddingBottom: 8, paddingTop: 8 },
         tabBarLabelStyle: { fontSize: 14, fontWeight: '600' },
       }}
     >
-      <Tab.Screen name="Explore" component={MapScreen} options={{ tabBarLabel: 'Explore' }} />
-      <Tab.Screen name="MakePost" component={MakePostScreen} options={{ tabBarLabel: 'Make a post' }} />
-      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: 'Community' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
+      <Tab.Screen
+        name="Explore"
+        component={MapScreen}
+        options={{
+          tabBarLabel: 'Explore',
+          tabBarIcon: ({ color, size }) => <Ionicons name="map-outline" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="MakePost"
+        component={MakePostScreen}
+        options={{
+          tabBarLabel: 'Make a post',
+          tabBarIcon: ({ color, size }) => <Ionicons name="add" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Community"
+        component={CommunityScreen}
+        options={{
+          tabBarLabel: 'Community',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }

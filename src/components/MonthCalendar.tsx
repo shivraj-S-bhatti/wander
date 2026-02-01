@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { colors } from '../theme';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -62,9 +63,8 @@ export function MonthCalendar({ value, onChange, min, max }: Props) {
     return false;
   };
 
-  const daySize = Platform.OS === 'ios' ? 40 : 36;
   const cellMargin = 2;
-  const cellTotal = daySize + cellMargin * 2;
+  const cellMarginStyle = { marginVertical: cellMargin, marginHorizontal: 0 };
 
   return (
     <View style={styles.wrap}>
@@ -86,9 +86,9 @@ export function MonthCalendar({ value, onChange, min, max }: Props) {
           </Text>
         ))}
       </View>
-      <View style={[styles.grid, { width: 7 * cellTotal }]}>
+      <View style={styles.grid}>
         {Array.from({ length: leadingBlanks }, (_, i) => (
-          <View key={`blank-${i}`} style={[styles.dayCell, { width: daySize, height: daySize, margin: cellMargin }]} />
+          <View key={`blank-${i}`} style={[styles.dayCell, styles.dayCellSize, cellMarginStyle]} />
         ))}
         {days.map((ts) => {
           const d = new Date(ts);
@@ -100,7 +100,8 @@ export function MonthCalendar({ value, onChange, min, max }: Props) {
               key={ts}
               style={[
                 styles.dayCell,
-                { width: daySize, height: daySize, margin: cellMargin },
+                styles.dayCellSize,
+                cellMarginStyle,
                 selected && styles.dayCellSelected,
                 disabled && styles.dayCellDisabled,
               ]}
@@ -126,13 +127,12 @@ export function MonthCalendar({ value, onChange, min, max }: Props) {
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: '#fff',
+    width: '100%',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#e5e5e5',
-    minWidth: 280,
-    maxWidth: 320,
+    borderColor: colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  arrowText: { fontSize: 20, color: '#333', fontWeight: '600' },
-  monthYear: { fontSize: 14, fontWeight: '700', color: '#1a1a2e' },
+  arrowText: { fontSize: 20, color: colors.black, fontWeight: '600' },
+  monthYear: { fontSize: 14, fontWeight: '700', color: colors.black },
   weekdayRow: {
     flexDirection: 'row',
     marginBottom: 8,
@@ -155,25 +155,30 @@ const styles = StyleSheet.create({
   weekday: {
     flex: 1,
     fontSize: 11,
-    color: '#666',
+    color: colors.textMuted,
     textAlign: 'center',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    width: '100%',
   },
   dayCell: {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
   },
+  dayCellSize: {
+    width: '14.28%',
+    aspectRatio: 1,
+  },
   dayCellSelected: {
-    backgroundColor: '#facc15',
+    backgroundColor: colors.accent,
   },
   dayCellDisabled: {
     opacity: 0.4,
   },
-  dayNum: { fontSize: 15, fontWeight: '600', color: '#333' },
-  dayNumSelected: { color: '#1a1a2e' },
-  dayNumDisabled: { color: '#999' },
+  dayNum: { fontSize: 15, fontWeight: '600', color: colors.black },
+  dayNumSelected: { color: colors.white },
+  dayNumDisabled: { color: colors.textMuted },
 });

@@ -1,49 +1,58 @@
-import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../theme';
 
-type TabName = 'MakePost' | 'Explore' | 'Community' | 'Profile';
+const logoSource = require('../assets/wander-high-resolution-logo-transparent.png');
+
+type ViewMode = 'list' | 'map';
 
 type Props = {
-  showCityInput?: boolean;
-  city?: string;
-  onCityChange?: (city: string) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 };
 
-const NAV: { label: string; tab: TabName }[] = [
-  { label: 'make a post', tab: 'MakePost' },
-  { label: 'explore', tab: 'Explore' },
-  { label: 'community', tab: 'Community' },
-  { label: 'profile', tab: 'Profile' },
-];
-
-export function AppHeader({ showCityInput, city = 'Boston', onCityChange }: Props) {
-  const navigation = useNavigation();
-
-  const jumpTo = (tab: TabName) => {
-    (navigation as any).navigate(tab);
-  };
+export function AppHeader({ viewMode, onViewModeChange }: Props) {
+  const showToggle = viewMode != null && onViewModeChange != null;
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Text style={styles.title}>Wander</Text>
-        {showCityInput ? (
-          <TextInput
-            style={styles.cityInput}
-            value={city}
-            onChangeText={onCityChange}
-            placeholder="City"
-            placeholderTextColor="#999"
-          />
-        ) : null}
-        <View style={styles.nav}>
-          {NAV.map(({ label, tab }) => (
-            <Text key={tab} style={styles.navLink} onPress={() => jumpTo(tab)}>
-              {label}
-            </Text>
-          ))}
-        </View>
+        <Image source={logoSource} style={styles.logo} resizeMode="contain" accessibilityLabel="Wander" />
+        {showToggle && (
+          <View style={styles.toggle}>
+            <TouchableOpacity
+              style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
+              onPress={() => onViewModeChange('list')}
+              accessibilityLabel="List view"
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="list-outline"
+                size={18}
+                color={viewMode === 'list' ? colors.white : colors.textMuted}
+              />
+              <Text style={[styles.toggleLabel, viewMode === 'list' && styles.toggleLabelActive]}>
+                List
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
+              onPress={() => onViewModeChange('map')}
+              accessibilityLabel="Map view"
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="map-outline"
+                size={18}
+                color={viewMode === 'map' ? colors.white : colors.textMuted}
+              />
+              <Text style={[styles.toggleLabel, viewMode === 'map' && styles.toggleLabelActive]}>
+                Map
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -54,36 +63,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.border,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
+  logo: {
+    height: 32,
+    width: 120,
     marginRight: 16,
   },
-  cityInput: {
-    flex: 1,
-    minWidth: 100,
-    fontSize: 16,
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    marginRight: 16,
-  },
-  nav: {
+  toggle: {
     flexDirection: 'row',
-    gap: 12,
     marginLeft: 'auto',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
   },
-  navLink: {
+  toggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  toggleBtnActive: {
+    backgroundColor: colors.accent,
+  },
+  toggleLabel: {
     fontSize: 14,
-    color: '#333',
+    fontWeight: '600',
+    color: colors.textMuted,
+  },
+  toggleLabelActive: {
+    color: colors.white,
   },
 });
