@@ -10,6 +10,11 @@ const FACE_ASSETS: Record<string, number> = {
   gal1: require('../assets/faces/gal1.jpg'),
   gal2: require('../assets/faces/gal2.jpg'),
   gal3: require('../assets/faces/gal3.jpg'),
+  celina: require('../assets/faces/celina.jpg'),
+  clyde: require('../assets/faces/clyde.jpg'),
+  elana: require('../assets/faces/elana.jpg'),
+  kim: require('../assets/faces/kim.jpg'),
+  megan: require('../assets/faces/megan.jpg'),
 };
 
 export const FACE_KEYS = Object.keys(FACE_ASSETS);
