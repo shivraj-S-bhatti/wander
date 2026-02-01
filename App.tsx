@@ -4,7 +4,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { Provider } from 'react-redux';
+import { store } from './src/state/reduxStore';
+import { useAppSelector } from './src/state/reduxStore';
 import { StoreProvider } from './src/state/store';
+import { AuthHydration } from './src/state/AuthHydration';
 import { colors } from './src/theme';
 import { MakePostScreen } from './src/screens/MakePostScreen';
 import { MapScreen } from './src/screens/MapScreen';
@@ -84,32 +88,46 @@ function MainTabs() {
   );
 }
 
+function RootNavigator() {
+  const token = useAppSelector((state) => state.auth.token);
+  return (
+    <Stack.Navigator
+      initialRouteName={token ? 'MainTabs' : 'Login'}
+      screenOptions={{ headerShown: true }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="PlaceDetail"
+        component={PlaceDetailScreen}
+        options={{ title: 'Place' }}
+      />
+      <Stack.Screen
+        name="ProfileDetail"
+        component={ProfileDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Leaderboard"
+        component={LeaderboardScreen}
+        options={{ title: 'Leaderboard' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   return (
-    <StoreProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: true }}>
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="PlaceDetail"
-            component={PlaceDetailScreen}
-            options={{ title: 'Place' }}
-          />
-          <Stack.Screen
-            name="ProfileDetail"
-            component={ProfileDetailScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Leaderboard"
-            component={LeaderboardScreen}
-            options={{ title: 'Leaderboard' }}
-          />
-        </Stack.Navigator>
-        <StatusBar style="dark" />
-      </NavigationContainer>
-    </StoreProvider>
+    <Provider store={store}>
+      <AuthHydration>
+        <StoreProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+          <StatusBar style="dark" />
+        </StoreProvider>
+      </AuthHydration>
+    </Provider>
   );
 }

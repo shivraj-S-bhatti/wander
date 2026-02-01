@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   ImageBackground,
   StyleSheet,
@@ -10,6 +11,10 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAppDispatch } from '../state/reduxStore';
+import { setCredentials } from '../state/authSlice';
+import { setStoredAuth } from '../services/authStorage';
+import * as authApi from '../services/auth';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../../App';
 
@@ -20,11 +25,25 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, '
 
 export function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const [username, setUsername] = useState('');
+  const dispatch = useAppDispatch();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = () => {
-    navigation.replace('MainTabs');
+  const handleLogin = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const { token, user } = await authApi.login(email, password);
+      dispatch(setCredentials({ user, token }));
+      await setStoredAuth({ token, user });
+      navigation.replace('MainTabs');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const goToSignup = () => {
@@ -49,10 +68,11 @@ export function LoginScreen() {
             />
             <TextInput
               style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              placeholder="Username"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email"
               placeholderTextColor={colors.placeholder}
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -64,13 +84,19 @@ export function LoginScreen() {
               placeholderTextColor={colors.placeholder}
               secureTextEntry
             />
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleLogin}
+              disabled={loading}
               accessibilityLabel="Log in"
               accessibilityRole="button"
             >
-              <Text style={styles.buttonText}>Log in</Text>
+              {loading ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={styles.buttonText}>Log in</Text>
+              )}
             </TouchableOpacity>
             <View style={styles.signupRow}>
               <Text style={styles.signupPrompt}>New to wander? </Text>
@@ -152,5 +178,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.accent,
+  },
+  errorText: {
+    color: '#c00',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });

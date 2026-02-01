@@ -10,7 +10,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { CURRENT_USER_ID, DEMO_USERS } from '../data/demo';
 import type { Post } from '../data/demo';
+import { clearStoredAuth } from '../services/authStorage';
 import { useStore } from '../state/store';
+import { useAppDispatch } from '../state/reduxStore';
+import { logout } from '../state/authSlice';
 import { colors } from '../theme';
 import { ActivityHeatmap } from './ProfileFeed';
 
@@ -26,7 +29,15 @@ function deriveHandle(name: string, id: string): string {
 
 export function ProfileLayout({ userId, isOwnProfile }: Props) {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const { state, getBadges, getLevel, getStreak, getNextBadgeProgress } = useStore();
+
+  const handleLogout = async () => {
+    await clearStoredAuth();
+    dispatch(logout());
+    const stack = navigation.getParent();
+    stack?.reset({ routes: [{ name: 'Login' }] });
+  };
 
   const user = useMemo(() => DEMO_USERS.find((u) => u.id === userId) ?? { id: userId, name: 'Unknown' }, [userId]);
   const posts = useMemo(() => state.posts.filter((p) => p.userId === userId), [state.posts, userId]);
@@ -128,6 +139,18 @@ export function ProfileLayout({ userId, isOwnProfile }: Props) {
         ))}
       </View>
       <ActivityHeatmap posts={posts} userId={userId} />
+      {isOwnProfile && (
+        <View style={styles.logoutRow}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            accessibilityLabel="Log out"
+            accessibilityRole="button"
+          >
+            <Text style={styles.logoutText}>Log out</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </>
   );
 
@@ -241,4 +264,14 @@ const styles = StyleSheet.create({
   badgeChipUnlocked: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.accent },
   badgeText: { fontSize: 12, color: colors.textMuted },
   badgeTextUnlocked: { color: colors.accent, fontWeight: '600' },
+  logoutRow: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 32, alignItems: 'center' },
+  logoutButton: {
+    backgroundColor: colors.accent,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  logoutText: { fontSize: 16, fontWeight: '600', color: colors.white },
 });

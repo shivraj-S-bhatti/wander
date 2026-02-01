@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   ImageBackground,
   ScrollView,
@@ -11,6 +12,10 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAppDispatch } from '../state/reduxStore';
+import { setCredentials } from '../state/authSlice';
+import { setStoredAuth } from '../services/authStorage';
+import * as authApi from '../services/auth';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../../App';
 
@@ -21,13 +26,31 @@ type SignupScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 
 
 export function SignupScreen() {
   const navigation = useNavigation<SignupScreenNavigationProp>();
+  const dispatch = useAppDispatch();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignup = () => {
-    navigation.replace('MainTabs');
+  const handleSignup = async () => {
+    setError(null);
+    if (confirmPassword !== password) {
+      setError('Passwords do not match');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { token, user } = await authApi.signup(username, email, password);
+      dispatch(setCredentials({ user, token }));
+      await setStoredAuth({ token, user });
+      navigation.replace('MainTabs');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const goToLogin = () => {
@@ -88,13 +111,19 @@ export function SignupScreen() {
               placeholderTextColor={colors.placeholder}
               secureTextEntry
             />
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleSignup}
+              disabled={loading}
               accessibilityLabel="Sign up"
               accessibilityRole="button"
             >
-              <Text style={styles.buttonText}>Sign up</Text>
+              {loading ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <Text style={styles.buttonText}>Sign up</Text>
+              )}
             </TouchableOpacity>
             <View style={styles.loginRow}>
               <Text style={styles.loginPrompt}>Already a user? </Text>
@@ -177,5 +206,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.accent,
+  },
+  errorText: {
+    color: '#c00',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });

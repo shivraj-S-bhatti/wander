@@ -1,10 +1,12 @@
 import express, { json } from 'express';
+import cors from 'cors';
 import routes from './routes/index.js';
 import { connectDB } from './db.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(json());
 
 // Health check
