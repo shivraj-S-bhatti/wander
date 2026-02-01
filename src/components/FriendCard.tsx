@@ -7,11 +7,13 @@ import type { Friend } from '../data/demo';
 type Props = {
   friend: Friend;
   onPress?: (friend: Friend) => void;
+  rightElement?: React.ReactNode;
 };
 
-export function FriendCard({ friend, onPress }: Props) {
+export function FriendCard({ friend, onPress, rightElement }: Props) {
   const initial = friend.username.charAt(0).toUpperCase();
   const faceSrc = getFaceSource(friend.avatar);
+  const hasStats = friend.civicScore > 0 || friend.streak > 0;
 
   const content = (
     <>
@@ -30,10 +32,13 @@ export function FriendCard({ friend, onPress }: Props) {
       </View>
       <View style={styles.content}>
         <Text style={styles.username}>{friend.username}</Text>
-        <Text style={styles.stats}>
-          {friend.civicScore} pts · {friend.streak} day streak · #{friend.rank}
-        </Text>
+        {hasStats && (
+          <Text style={styles.stats}>
+            {friend.civicScore} pts · {friend.streak} day streak
+          </Text>
+        )}
       </View>
+      {rightElement != null ? <View style={styles.rightElement}>{rightElement}</View> : null}
     </>
   );
 
@@ -85,6 +90,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  rightElement: {
+    marginLeft: 8,
+    justifyContent: 'center',
   },
   username: {
     fontSize: 16,

@@ -12,9 +12,11 @@ type Props = {
   onViewModeChange?: (mode: ViewMode) => void;
   /** Optional text shown next to the logo (e.g. "Join events, earn civic points") */
   subtitle?: string;
+  /** Optional element on the right side of the header (e.g. bell icon for friend requests) */
+  rightElement?: React.ReactNode;
 };
 
-export function AppHeader({ viewMode, onViewModeChange, subtitle }: Props) {
+export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement }: Props) {
   const showToggle = viewMode != null && onViewModeChange != null;
 
   return (
@@ -27,6 +29,9 @@ export function AppHeader({ viewMode, onViewModeChange, subtitle }: Props) {
               {subtitle}
             </Text>
           </View>
+        ) : null}
+        {rightElement != null ? (
+          <View style={styles.rightElement}>{rightElement}</View>
         ) : null}
         {showToggle && (
           <View style={styles.toggle}>
@@ -95,6 +100,9 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: colors.textMuted,
+  },
+  rightElement: {
+    marginLeft: 'auto',
   },
   toggle: {
     flexDirection: 'row',
