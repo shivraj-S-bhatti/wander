@@ -11,6 +11,9 @@ export type Place = {
   tags: string[];
   isLocalBusiness?: boolean;
 };
+/** Pro-community badges e.g. Local business, Volunteer, Organized hangout */
+export type CheckinBadge = 'Local business' | 'Volunteer' | 'Organized hangout' | 'Public transport';
+
 export type Checkin = {
   id: string;
   userId: string;
@@ -19,6 +22,8 @@ export type Checkin = {
   type: 'hangout' | 'visited' | 'volunteer';
   rating?: number;
   note?: string;
+  /** Badges for pro-community behaviour */
+  badges?: CheckinBadge[];
 };
 export type Review = {
   id: string;
@@ -71,13 +76,13 @@ export const DEMO_ORIGIN = { lat: 37.7812, lng: -122.4112 };
 export const DEMO_MAP_CENTER = { lat: 37.7849, lng: -122.4094 };
 
 export const DEMO_USERS: User[] = [
-  { id: 'u_me', name: 'You', avatar: undefined },
-  { id: 'u_1', name: 'Alex', avatar: undefined },
-  { id: 'u_2', name: 'Sam', avatar: undefined },
-  { id: 'u_3', name: 'Jordan', avatar: undefined },
-  { id: 'u_4', name: 'Riley', avatar: undefined },
-  { id: 'u_5', name: 'Casey', avatar: undefined },
-  { id: 'u_6', name: 'Morgan', avatar: undefined },
+  { id: 'u_me', name: 'You', avatar: 'guy4' },
+  { id: 'u_1', name: 'Alex', avatar: 'guy1' },
+  { id: 'u_2', name: 'Sam', avatar: 'guy2' },
+  { id: 'u_3', name: 'Jordan', avatar: 'guy3' },
+  { id: 'u_4', name: 'Riley', avatar: 'gal1' },
+  { id: 'u_5', name: 'Casey', avatar: 'gal2' },
+  { id: 'u_6', name: 'Morgan', avatar: 'gal3' },
 ];
 
 export const DEMO_PLACES: Place[] = [
@@ -144,12 +149,12 @@ export const DEMO_PLACES: Place[] = [
 ];
 
 export const DEMO_CHECKINS: Checkin[] = [
-  { id: 'c_1', userId: 'u_1', placeId: 'p_1', ts: now - 2 * hour, type: 'hangout', rating: 5, note: 'Great oat latte' },
-  { id: 'c_2', userId: 'u_2', placeId: 'p_2', ts: now - 5 * hour, type: 'visited', rating: 4 },
-  { id: 'c_3', userId: 'u_3', placeId: 'p_3', ts: now - 1 * day, type: 'hangout', note: 'Sunset was amazing' },
-  { id: 'c_4', userId: 'u_4', placeId: 'p_5', ts: now - 3 * hour, type: 'volunteer', note: 'Food distribution' },
-  { id: 'c_5', userId: 'u_1', placeId: 'p_4', ts: now - 1 * day - 2 * hour, type: 'visited', rating: 5 },
-  { id: 'c_6', userId: 'u_2', placeId: 'p_6', ts: now - 2 * day, type: 'volunteer' },
+  { id: 'c_1', userId: 'u_1', placeId: 'p_1', ts: now - 2 * hour, type: 'hangout', rating: 5, note: 'Great oat latte', badges: ['Local business', 'Organized hangout'] },
+  { id: 'c_2', userId: 'u_2', placeId: 'p_2', ts: now - 5 * hour, type: 'visited', rating: 4, badges: ['Local business'] },
+  { id: 'c_3', userId: 'u_3', placeId: 'p_3', ts: now - 1 * day, type: 'hangout', note: 'Sunset was amazing', badges: ['Organized hangout'] },
+  { id: 'c_4', userId: 'u_4', placeId: 'p_5', ts: now - 3 * hour, type: 'volunteer', note: 'Food distribution', badges: ['Volunteer'] },
+  { id: 'c_5', userId: 'u_1', placeId: 'p_4', ts: now - 1 * day - 2 * hour, type: 'visited', rating: 5, badges: ['Local business'] },
+  { id: 'c_6', userId: 'u_2', placeId: 'p_6', ts: now - 2 * day, type: 'volunteer', badges: ['Volunteer'] },
 ];
 
 export const DEMO_REVIEWS: Review[] = [
@@ -196,12 +201,12 @@ export const DEMO_EVENTS: Event[] = [
 ];
 
 export const DEMO_FRIENDS: Friend[] = [
-  { id: 'u_1', username: 'Alex', avatar: undefined, civicScore: 320, streak: 7, rank: 1 },
-  { id: 'u_2', username: 'Sam', avatar: undefined, civicScore: 280, streak: 5, rank: 2 },
-  { id: 'u_3', username: 'Jordan', avatar: undefined, civicScore: 245, streak: 12, rank: 3 },
-  { id: 'u_4', username: 'Riley', avatar: undefined, civicScore: 190, streak: 3, rank: 4 },
-  { id: 'u_5', username: 'Casey', avatar: undefined, civicScore: 165, streak: 2, rank: 5 },
-  { id: 'u_6', username: 'Morgan', avatar: undefined, civicScore: 120, streak: 1, rank: 6 },
+  { id: 'u_1', username: 'Alex', avatar: 'guy1', civicScore: 320, streak: 7, rank: 1 },
+  { id: 'u_2', username: 'Sam', avatar: 'guy2', civicScore: 280, streak: 5, rank: 2 },
+  { id: 'u_3', username: 'Jordan', avatar: 'guy3', civicScore: 245, streak: 12, rank: 3 },
+  { id: 'u_4', username: 'Riley', avatar: 'gal1', civicScore: 190, streak: 3, rank: 4 },
+  { id: 'u_5', username: 'Casey', avatar: 'gal2', civicScore: 165, streak: 2, rank: 5 },
+  { id: 'u_6', username: 'Morgan', avatar: 'gal3', civicScore: 120, streak: 1, rank: 6 },
 ];
 
 export const CURRENT_USER_ID = 'u_me';
