@@ -1,19 +1,28 @@
-const users = [
-  { id: '1', username: 'Alex', civicScore: 320, streak: 7, rank: 1 },
-  { id: '2', username: 'Sam', civicScore: 280, streak: 5, rank: 2 },
-];
+import { getDb } from '../db.js';
 
-let nextId = 3;
+const COLLECTION = 'users';
 
-export function getAll() {
-  return users;
+export async function findByEmail(email) {
+  const db = getDb();
+  return db.collection(COLLECTION).findOne({ email });
 }
 
-export function create(user) {
-  const newUser = { id: String(nextId++), ...user };
-  users.push(newUser);
-  return newUser;
+export async function findByUsername(username) {
+  const db = getDb();
+  return db.collection(COLLECTION).findOne({ username });
 }
 
-const userModel = { getAll, create };
+export async function create({ username, email, passwordHash }) {
+  const db = getDb();
+  const doc = { username, email, password: passwordHash };
+  const result = await db.collection(COLLECTION).insertOne(doc);
+  return { _id: result.insertedId, username, email };
+}
+
+export async function getAll() {
+  const db = getDb();
+  return db.collection(COLLECTION).find({}, { projection: { password: 0 } }).toArray();
+}
+
+const userModel = { findByEmail, findByUsername, create, getAll };
 export { userModel };

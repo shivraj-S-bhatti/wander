@@ -19,6 +19,9 @@ export async function connectDB() {
   client = new MongoClient(uri);
   await client.connect();
   db = client.db();
+  const users = db.collection('users');
+  await users.createIndex({ email: 1 }, { unique: true });
+  await users.createIndex({ username: 1 }, { unique: true });
   console.log('MongoDB connected');
   return db;
 }
