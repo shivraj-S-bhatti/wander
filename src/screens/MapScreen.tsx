@@ -193,7 +193,7 @@ export function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} centerElement={planStarButton} />
+      <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} centerElement={planHeaderButton} />
       {viewMode === 'list' ? (
         <View style={styles.listWrap}>
           <TextInput
