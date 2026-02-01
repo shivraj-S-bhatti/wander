@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,10 +9,15 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { MonthCalendar } from '../components/MonthCalendar';
+import * as usersApi from '../services/users';
+import type { ApiUser } from '../services/users';
 import { useStore } from '../state/store';
 import { POINTS_POST } from '../state/store';
+import type { RootState } from '../state/reduxStore';
 import { colors } from '../theme';
 
 const WIDE_BREAKPOINT = 600;
@@ -26,10 +32,17 @@ function startOfDay(ts: number): number {
   return d.getTime();
 }
 
+type SelectedFriend = { id: string; username: string };
+
 export function MakePostScreen() {
   const { addPost } = useStore();
+  const token = useSelector((s: RootState) => s.auth.token);
   const [what, setWhat] = useState('');
   const [whoWith, setWhoWith] = useState('');
+  const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
+  const [friends, setFriends] = useState<ApiUser[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [whoDropdownOpen, setWhoDropdownOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [experience, setExperience] = useState('');
   const [hoursSpent, setHoursSpent] = useState<number>(1);
@@ -38,6 +51,41 @@ export function MakePostScreen() {
   const [selectedDateTs, setSelectedDateTs] = useState(startOfDay(Date.now()));
   const [saved, setSaved] = useState(false);
   const [pointsToast, setPointsToast] = useState(false);
+
+  const loadFriends = useCallback(async () => {
+    if (!token) {
+      setFriends([]);
+      setFriendsLoading(false);
+      return;
+    }
+    setFriendsLoading(true);
+    try {
+      const list = await usersApi.getMyFriends(token);
+      setFriends(list);
+    } catch {
+      setFriends([]);
+    } finally {
+      setFriendsLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    loadFriends();
+  }, [loadFriends]);
+
+  const addFriendToWho = useCallback((user: ApiUser) => {
+    setSelectedFriends((prev) =>
+      prev.some((f) => f.id === user.id) ? prev : [...prev, { id: user.id, username: user.username }]
+    );
+    setWhoDropdownOpen(false);
+  }, []);
+
+  const removeFriendFromWho = useCallback((id: string) => {
+    setSelectedFriends((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const selectedIds = new Set(selectedFriends.map((f) => f.id));
+  const availableFriends = friends.filter((f) => !selectedIds.has(f.id));
 
   const HOURS_OPTIONS = [0.5, 1, 2, 3, 4];
 
@@ -54,11 +102,15 @@ export function MakePostScreen() {
 
   const handleSave = () => {
     if (!what.trim()) return;
+    const whoWithValue =
+      token && selectedFriends.length > 0
+        ? selectedFriends.map((f) => f.username).join(', ')
+        : whoWith.trim();
     const noonOnSelected = selectedDateTs + 12 * 60 * 60 * 1000;
     addPost(
       {
         what: what.trim(),
-        whoWith: whoWith.trim(),
+        whoWith: whoWithValue,
         rating: rating || 0,
         experience: experience.trim(),
         imageUris: [],
@@ -71,6 +123,7 @@ export function MakePostScreen() {
     setPointsToast(true);
     setWhat('');
     setWhoWith('');
+    setSelectedFriends([]);
     setRating(0);
     setExperience('');
     setHoursSpent(1);
@@ -97,13 +150,75 @@ export function MakePostScreen() {
       </View>
       <View style={styles.section}>
         <Text style={styles.label}>Who with?</Text>
-        <TextInput
-          style={styles.input}
-          value={whoWith}
-          onChangeText={setWhoWith}
-          placeholder="e.g. Alex, Sam"
-          placeholderTextColor={colors.placeholder}
-        />
+        {token ? (
+          <>
+            <TouchableOpacity
+              style={styles.whoDropdownTrigger}
+              onPress={() => setWhoDropdownOpen((o) => !o)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.whoDropdownTriggerText}>
+                {whoDropdownOpen ? 'Tap a friend to add' : 'Add from friends'}
+              </Text>
+              <Ionicons
+                name={whoDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+            {whoDropdownOpen && (
+              <View style={styles.whoDropdown}>
+                {friendsLoading ? (
+                  <ActivityIndicator style={styles.whoDropdownLoader} color={colors.accent} />
+                ) : availableFriends.length === 0 ? (
+                  <Text style={styles.whoDropdownEmpty}>
+                    {friends.length === 0 ? 'No friends yet' : 'All friends added'}
+                  </Text>
+                ) : (
+                  <ScrollView
+                    style={styles.whoDropdownList}
+                    nestedScrollEnabled
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {availableFriends.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={styles.whoDropdownItem}
+                        onPress={() => addFriendToWho(item)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.whoDropdownItemText}>{item.username}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            )}
+            {selectedFriends.length > 0 && (
+              <View style={styles.whoChipsRow}>
+                {selectedFriends.map((f) => (
+                  <TouchableOpacity
+                    key={f.id}
+                    style={styles.whoChip}
+                    onPress={() => removeFriendFromWho(f.id)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.whoChipText}>{f.username}</Text>
+                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </>
+        ) : (
+          <TextInput
+            style={styles.input}
+            value={whoWith}
+            onChangeText={setWhoWith}
+            placeholder="e.g. Alex, Sam (log in to pick from friends)"
+            placeholderTextColor={colors.placeholder}
+          />
+        )}
       </View>
       {!isWide && (
         <View style={styles.section}>
@@ -257,6 +372,49 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  whoDropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  whoDropdownTriggerText: { fontSize: 16, color: colors.textMuted },
+  whoDropdown: {
+    marginTop: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    maxHeight: 200,
+  },
+  whoDropdownLoader: { marginVertical: 16 },
+  whoDropdownEmpty: { fontSize: 14, color: colors.textMuted, padding: 16 },
+  whoDropdownList: { maxHeight: 196 },
+  whoDropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  whoDropdownItemText: { fontSize: 16, color: colors.black },
+  whoChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  whoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  whoChipText: { fontSize: 14, color: colors.accent, fontWeight: '600' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   ratingRow: { flexDirection: 'row', gap: 8, width: '100%' },
   ratingBtn: {
