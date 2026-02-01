@@ -10,6 +10,8 @@ export type Place = {
   priceTier: 1 | 2 | 3 | 4;
   tags: string[];
   isLocalBusiness?: boolean;
+  /** Average rating 1–5 for display (e.g. from reviews) */
+  averageRating?: number;
 };
 /** Pro-community badges e.g. Local business, Volunteer, Organized hangout */
 export type CheckinBadge = 'Local business' | 'Volunteer' | 'Organized hangout' | 'Public transport';
@@ -57,6 +59,10 @@ export type Post = {
   tags: string[];
   /** Hours spent on this activity (for heatmap intensity). One activity per day. */
   hoursSpent?: number;
+  /** Optional place/location name for card display */
+  placeName?: string;
+  /** Badges for post card (e.g. Local business, Organized hangout) */
+  badges?: CheckinBadge[];
 };
 
 export type Friend = {
@@ -76,7 +82,7 @@ export const DEMO_ORIGIN = { lat: 37.7812, lng: -122.4112 };
 export const DEMO_MAP_CENTER = { lat: 37.7849, lng: -122.4094 };
 
 export const DEMO_USERS: User[] = [
-  { id: 'u_me', name: 'You', avatar: 'guy4' },
+  { id: 'u_me', name: 'Jordan Lee', avatar: 'guy4', handle: '@jordan_lee_2' },
   { id: 'u_1', name: 'Alex', avatar: 'guy1' },
   { id: 'u_2', name: 'Sam', avatar: 'guy2' },
   { id: 'u_3', name: 'Jordan', avatar: 'guy3' },
@@ -210,6 +216,62 @@ export const DEMO_FRIENDS: Friend[] = [
 ];
 
 export const CURRENT_USER_ID = 'u_me';
+
+/** Demo posts for current user to populate "Been" and make profile lively */
+export const DEMO_POSTS_CURRENT_USER: Post[] = [
+  {
+    id: 'post_demo_1',
+    userId: CURRENT_USER_ID,
+    ts: now - 2 * hour,
+    what: 'Great oat latte',
+    whoWith: '—',
+    rating: 5,
+    experience: 'Perfect morning spot.',
+    imageUris: [],
+    tags: ['coffee', 'chill'],
+    placeName: 'The Hive Coffee',
+    badges: ['Local business'],
+  },
+  {
+    id: 'post_demo_2',
+    userId: CURRENT_USER_ID,
+    ts: now - 1 * day,
+    what: 'Sunset walk by the water',
+    whoWith: '—',
+    rating: 5,
+    experience: 'So peaceful.',
+    imageUris: [],
+    tags: ['outdoors', 'chill'],
+    placeName: 'Marina Green',
+    badges: ['Organized hangout'],
+  },
+  {
+    id: 'post_demo_3',
+    userId: CURRENT_USER_ID,
+    ts: now - 2 * day,
+    what: 'Lunch at the local spot',
+    whoWith: '—',
+    rating: 4,
+    experience: 'Solid food and vibes.',
+    imageUris: [],
+    tags: ['food', 'local'],
+    placeName: 'Luna Kitchen',
+    badges: ['Local business'],
+  },
+];
+
+/** Demo profile for current user when none is loaded (civic points, prefs) */
+export const DEMO_PROFILE_INITIAL = {
+  civicPoints: 35,
+  prefs: { vibe: 'chill' as const, budget: 'med' as const },
+  joinedEventIds: [] as string[],
+  memoryCounters: {} as Record<string, number>,
+  tagCounts: {} as Record<string, number>,
+  lastChosenPlaceIds: [] as string[],
+};
+
+/** Dummy count for "Want to Try" on current user profile */
+export const DEMO_WANT_TO_TRY_COUNT = 4;
 
 // Fallback recommendations when Gemini is unavailable
 export const DEMO_RECS = [

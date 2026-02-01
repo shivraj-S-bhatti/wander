@@ -30,6 +30,7 @@ export type ItineraryConstraints = {
 export type ItineraryOption = {
   placeIds: string[];
   name?: string;
+  priceBreakdown?: string;
 };
 
 export type ItineraryOptionsResponse = {
@@ -64,7 +65,7 @@ Use the place ids from the candidate list. suggestedTime should be like "8:00 PM
 }
 
 function buildItineraryPrompt(constraints: ItineraryConstraints, placesSummary: string): string {
-  return `You are a local day-planning assistant. Given the user's constraints, suggest 1–3 itinerary options: each is an ordered list of place ids (2–4 stops) from the candidate list.
+  return `You are a local day-planning assistant. Given the user's constraints, suggest 1–3 itinerary options: each is an ordered list of place ids (2–4 stops) from the candidate list. For each option, add a brief priceBreakdown estimating total cost from priceTier and typical meal/activity costs (e.g. "~$18 total: coffee $4, park free, lunch ~$14"). Transit can be omitted or noted as "transit ~$3".
 
 Constraints:
 - Starting location: ${constraints.startLocation || 'any'}
@@ -76,8 +77,8 @@ Candidate places (id, name, category, tags, priceTier):
 ${placesSummary}
 
 Respond with ONLY a valid JSON object, no markdown or extra text, in this exact shape:
-{"options":[{"name":"Coffee then park","placeIds":["p_1","p_3"]},{"name":"Bar hop","placeIds":["p_2","p_4"]}]}
-Use only place ids from the candidate list. Each option should have 2–4 placeIds in a logical order (e.g. morning cafe, then park, then dinner).`;
+{"options":[{"name":"Coffee then park","placeIds":["p_1","p_3"],"priceBreakdown":"~$15 total: coffee $4, park free, lunch ~$11"},{"name":"Bar hop","placeIds":["p_2","p_4"],"priceBreakdown":"~$35 total: drinks ~$15, dinner ~$20"}]}
+Use only place ids from the candidate list. Each option should have 2–4 placeIds in a logical order (e.g. morning cafe, then park, then dinner). Include priceBreakdown for each option.`;
 }
 
 export async function fetchItineraryOptions(

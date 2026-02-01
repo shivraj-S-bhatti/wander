@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { getDirections, type DirectionsResult } from '../services/directions';
 
 import { GOOGLE_DIRECTIONS_API_KEY } from '../config';
@@ -45,7 +46,6 @@ export function RouteSheet({ origin, destination, onClose }: Props) {
 
   return (
     <View style={styles.sheet}>
-      <Text style={styles.title}>Get there</Text>
       {drive && (
         <View style={styles.row}>
           <Text style={styles.mode}>🚗 Driving</Text>
@@ -61,6 +61,23 @@ export function RouteSheet({ origin, destination, onClose }: Props) {
           <Text style={styles.detail}>
             {Math.round(transit.durationSeconds / 60)} min · ~$2.90
           </Text>
+          {result.transitSteps && result.transitSteps.length > 0 && (
+            <View style={styles.steps}>
+              {result.transitSteps.map((step, index) => (
+                <View key={index} style={styles.stepRow}>
+                  {step.type === 'walk' ? (
+                    <Ionicons name="walk" size={16} color={colors.textMuted} style={styles.stepIcon} />
+                  ) : (
+                    <Ionicons name="bus" size={16} color={colors.textMuted} style={styles.stepIcon} />
+                  )}
+                  <Text style={styles.stepText}>
+                    {index + 1}. {step.instruction}
+                    {step.durationMinutes != null ? ` (${step.durationMinutes} min)` : ''}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       )}
       {!transit && drive && (
@@ -83,10 +100,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontWeight: '700', fontSize: 18, marginBottom: 16 },
   row: { alignSelf: 'stretch', marginBottom: 12 },
   mode: { fontWeight: '600', fontSize: 15, marginBottom: 4 },
   detail: { fontSize: 14, color: colors.textMuted },
+  steps: { marginTop: 10, paddingLeft: 4 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  stepIcon: { marginRight: 8 },
+  stepText: { fontSize: 13, color: colors.textMuted, flex: 1 },
   loadingText: { marginTop: 8, color: colors.textMuted },
   error: { color: colors.accent },
   footnote: { fontSize: 11, color: colors.textMuted, marginTop: 12 },

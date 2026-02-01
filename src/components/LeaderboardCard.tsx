@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 import { getFaceSource } from '../utils/avatarFaces';
@@ -7,11 +7,14 @@ import type { Friend } from '../data/demo';
 
 type Props = {
   entry: Friend;
+  isFriend?: boolean;
+  onAddFriend?: (userId: string) => void;
 };
 
-export function LeaderboardCard({ entry }: Props) {
+export function LeaderboardCard({ entry, isFriend, onAddFriend }: Props) {
   const initial = entry.username.charAt(0).toUpperCase();
   const faceSrc = getFaceSource(entry.avatar);
+  const showAddFriend = onAddFriend != null && !isFriend;
 
   return (
     <View style={styles.card}>
@@ -29,7 +32,19 @@ export function LeaderboardCard({ entry }: Props) {
         )}
       </View>
       <View style={styles.content}>
-        <Text style={styles.username}>{entry.username}</Text>
+        <View style={styles.usernameRow}>
+          <Text style={styles.username}>{entry.username}</Text>
+          {showAddFriend && (
+            <TouchableOpacity
+              style={styles.addFriendIconBtn}
+              onPress={() => onAddFriend(entry.id)}
+              accessibilityLabel="Add friend"
+              accessibilityRole="button"
+            >
+              <Ionicons name="person-add-outline" size={20} color={colors.accent} />
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={styles.stats}>
           {entry.civicScore} pts · {entry.streak} day streak
         </Text>
@@ -88,11 +103,19 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   username: {
     fontSize: 16,
     fontWeight: '700',
     color: colors.black,
-    marginBottom: 4,
+  },
+  addFriendIconBtn: {
+    padding: 4,
   },
   stats: {
     fontSize: 13,

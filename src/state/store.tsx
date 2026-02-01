@@ -4,6 +4,8 @@ import {
   DEMO_CHECKINS,
   DEMO_EVENTS,
   DEMO_PLACES,
+  DEMO_POSTS_CURRENT_USER,
+  DEMO_PROFILE_INITIAL,
   DEMO_RECS,
   DEMO_USERS,
   type Event,
@@ -12,7 +14,7 @@ import {
 } from '../data/demo';
 import { GEMINI_API_KEY } from '../config';
 import { fetchRecommendations, type GeminiRecItem, type MemorySummary } from '../services/gemini';
-import { loadProfile, loadPlan, loadPosts, saveProfile, savePlan, savePosts, type StoredProfile, type StoredPost } from '../services/storage';
+import { loadProfile, loadPlan, loadPosts, loadDemoFriends, saveProfile, savePlan, savePosts, saveDemoFriends, type StoredProfile, type StoredPost } from '../services/storage';
 
 // ——— Civic points rules (hardcoded)
 const POINTS_JOIN_EVENT = (e: Event) => e.pointsReward;
@@ -45,16 +47,26 @@ type ProfileState = {
   recsError: string | null;
 };
 
-export type ActivePlan = { placeIds: string[]; name?: string };
+export type ActivePlan = { placeIds: string[]; name?: string; eventIds?: string[] };
 
 type PlanState = {
   activePlan: ActivePlan | null;
   openPlanModal: boolean;
+  pendingEventId: string | null;
+};
+
+type CityState = {
+  selectedCityId: string;
 };
 
 const defaultPlan: PlanState = {
   activePlan: null,
   openPlanModal: false,
+  pendingEventId: null,
+};
+
+const defaultCity: CityState = {
+  selectedCityId: 'san_francisco',
 };
 
 const defaultProfile: ProfileState = {
@@ -72,8 +84,10 @@ const defaultProfile: ProfileState = {
 type AppState = {
   profile: ProfileState;
   plan: PlanState;
+  city: CityState;
   events: Event[];
   posts: Post[];
+  demoFriendIds: string[];
 };
 
 type Action =
@@ -92,7 +106,11 @@ type Action =
   | { type: 'SET_ACTIVE_PLAN'; payload: ActivePlan | null }
   | { type: 'CLEAR_ACTIVE_PLAN' }
   | { type: 'SET_OPEN_PLAN_MODAL'; payload: boolean }
-  | { type: 'LOAD_PLAN'; payload: ActivePlan | null };
+  | { type: 'LOAD_PLAN'; payload: ActivePlan | null }
+  | { type: 'ADD_DEMO_FRIEND'; payload: string }
+  | { type: 'REMOVE_DEMO_FRIEND'; payload: string }
+  | { type: 'LOAD_DEMO_FRIENDS'; payload: string[] }
+  | { type: 'SET_SELECTED_CITY'; payload: string };
 
 function profileReducer(state: ProfileState, action: Action): ProfileState {
   switch (action.type) {
@@ -161,14 +179,31 @@ function planReducer(state: PlanState, action: Action): PlanState {
     case 'LOAD_PLAN':
       return { ...state, activePlan: action.payload };
     case 'SET_ACTIVE_PLAN':
-      return { ...state, activePlan: action.payload };
+      return { ...state, activePlan: action.payload, pendingEventId: null };
     case 'CLEAR_ACTIVE_PLAN':
       return { ...state, activePlan: null };
     case 'SET_OPEN_PLAN_MODAL':
       return { ...state, openPlanModal: action.payload };
+    case 'ADD_EVENT_TO_PLAN': {
+      const plan = state.activePlan;
+      if (!plan) return state;
+      const eventIds = plan.eventIds ?? [];
+      if (eventIds.includes(action.payload)) return state;
+      return {
+        ...state,
+        activePlan: { ...plan, eventIds: [...eventIds, action.payload] },
+      };
+    }
+    case 'SET_PENDING_EVENT':
+      return { ...state, pendingEventId: action.payload };
     default:
       return state;
   }
+}
+
+function cityReducer(state: CityState, action: Action): CityState {
+  if (action.type === 'SET_SELECTED_CITY') return { ...state, selectedCityId: action.payload };
+  return state;
 }
 
 function eventsReducer(state: Event[], action: Action): Event[] {
@@ -191,11 +226,26 @@ function eventsReducer(state: Event[], action: Action): Event[] {
   return state;
 }
 
+function demoFriendIdsReducer(state: string[], action: Action): string[] {
+  if (action.type === 'LOAD_DEMO_FRIENDS') return action.payload;
+  if (action.type === 'ADD_DEMO_FRIEND') {
+    const id = action.payload;
+    if (id === CURRENT_USER_ID || state.includes(id)) return state;
+    const user = DEMO_USERS.find((u) => u.id === id);
+    if (!user) return state;
+    return [...state, id];
+  }
+  if (action.type === 'REMOVE_DEMO_FRIEND') return state.filter((id) => id !== action.payload);
+  return state;
+}
+
 const initialState: AppState = {
   profile: defaultProfile,
   plan: defaultPlan,
+  city: defaultCity,
   events: DEMO_EVENTS.map((e) => ({ ...e, joinedUserIds: [...e.joinedUserIds] })),
   posts: [],
+  demoFriendIds: [],
 };
 
 function postsReducer(state: Post[], action: Action): Post[] {
@@ -211,6 +261,8 @@ function postsReducer(state: Post[], action: Action): Post[] {
       imageUris: p.imageUris ?? [],
       tags: p.tags ?? [],
       hoursSpent: p.hoursSpent,
+      ...(('placeName' in p && p.placeName != null) && { placeName: p.placeName }),
+      ...(('badges' in p && p.badges != null) && { badges: p.badges }),
     }));
   }
   if (action.type === 'ADD_POST') return [action.payload, ...state];
@@ -221,8 +273,10 @@ function rootReducer(state: AppState, action: Action): AppState {
   return {
     profile: profileReducer(state.profile, action),
     plan: planReducer(state.plan, action),
+    city: cityReducer(state.city, action),
     events: eventsReducer(state.events, action),
     posts: postsReducer(state.posts, action),
+    demoFriendIds: demoFriendIdsReducer(state.demoFriendIds, action),
   };
 }
 
@@ -241,6 +295,11 @@ type StoreContextValue = {
   setActivePlan: (plan: ActivePlan | null) => void;
   clearActivePlan: () => void;
   setOpenPlanModal: (open: boolean) => void;
+  addEventToPlan: (eventId: string) => void;
+  setPendingEventId: (eventId: string | null) => void;
+  setSelectedCity: (cityId: string) => void;
+  addDemoFriend: (userId: string) => void;
+  removeDemoFriend: (userId: string) => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -250,11 +309,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadProfile().then((p) => {
-      dispatch({ type: 'LOAD_PROFILE', payload: p });
-      if (p?.joinedEventIds?.length) dispatch({ type: 'MERGE_JOINED_INTO_EVENTS', joinedEventIds: p.joinedEventIds });
+      const useDemoProfile = p == null || (typeof p?.civicPoints === 'number' && p.civicPoints === 0);
+      const profile = useDemoProfile ? (DEMO_PROFILE_INITIAL as StoredProfile) : p!;
+      dispatch({ type: 'LOAD_PROFILE', payload: profile });
+      if (profile?.joinedEventIds?.length) dispatch({ type: 'MERGE_JOINED_INTO_EVENTS', joinedEventIds: profile.joinedEventIds });
     });
-    loadPosts().then((list) => dispatch({ type: 'LOAD_POSTS', payload: list }));
+    loadPosts().then((list) => {
+      const posts = list.length > 0 ? list : DEMO_POSTS_CURRENT_USER;
+      dispatch({ type: 'LOAD_POSTS', payload: posts });
+    });
     loadPlan().then((p) => dispatch({ type: 'LOAD_PLAN', payload: p }));
+    loadDemoFriends().then((ids) => dispatch({ type: 'LOAD_DEMO_FRIENDS', payload: ids }));
   }, []);
 
   useEffect(() => {
@@ -290,6 +355,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
     if (toStore.length > 0) savePosts(toStore);
   }, [state.posts]);
+
+  useEffect(() => {
+    saveDemoFriends(state.demoFriendIds);
+  }, [state.demoFriendIds]);
 
   const joinEvent = useCallback((eventId: string) => {
     dispatch({ type: 'JOIN_EVENT', eventId });
@@ -406,6 +475,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_OPEN_PLAN_MODAL', payload: open });
   }, []);
 
+  const addEventToPlan = useCallback((eventId: string) => {
+    dispatch({ type: 'ADD_EVENT_TO_PLAN', payload: eventId });
+  }, []);
+
+  const setPendingEventId = useCallback((eventId: string | null) => {
+    dispatch({ type: 'SET_PENDING_EVENT', payload: eventId });
+  }, []);
+
+  const setSelectedCity = useCallback((cityId: string) => {
+    dispatch({ type: 'SET_SELECTED_CITY', payload: cityId });
+  }, []);
+
+  const addDemoFriend = useCallback((userId: string) => {
+    dispatch({ type: 'ADD_DEMO_FRIEND', payload: userId });
+  }, []);
+
+  const removeDemoFriend = useCallback((userId: string) => {
+    dispatch({ type: 'REMOVE_DEMO_FRIEND', payload: userId });
+  }, []);
+
   const value: StoreContextValue = {
     state,
     dispatch,
@@ -421,6 +510,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setActivePlan,
     clearActivePlan,
     setOpenPlanModal,
+    addEventToPlan,
+    setPendingEventId,
+    setSelectedCity,
+    addDemoFriend,
+    removeDemoFriend,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

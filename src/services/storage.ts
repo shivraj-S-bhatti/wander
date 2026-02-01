@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const KEY_PROFILE = '@wander/profile';
 const KEY_POSTS = '@wander/posts';
 const KEY_PLAN = '@wander/plan';
+const KEY_DEMO_FRIENDS = '@wander/demo_friends';
 
 export type StoredProfile = {
   prefs?: { vibe?: string; budget?: string; categories?: string[] };
@@ -53,7 +54,7 @@ export async function savePosts(posts: StoredPost[]): Promise<void> {
   await AsyncStorage.setItem(KEY_POSTS, JSON.stringify(posts));
 }
 
-export type StoredPlan = { placeIds: string[]; name?: string } | null;
+export type StoredPlan = { placeIds: string[]; name?: string; eventIds?: string[] } | null;
 
 export async function loadPlan(): Promise<StoredPlan> {
   try {
@@ -61,7 +62,8 @@ export async function loadPlan(): Promise<StoredPlan> {
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!Array.isArray(data?.placeIds)) return null;
-    return { placeIds: data.placeIds, name: data.name };
+    const eventIds = Array.isArray(data.eventIds) ? data.eventIds : undefined;
+    return { placeIds: data.placeIds, name: data.name, eventIds };
   } catch {
     return null;
   }
@@ -70,4 +72,19 @@ export async function loadPlan(): Promise<StoredPlan> {
 export async function savePlan(plan: StoredPlan): Promise<void> {
   if (!plan) await AsyncStorage.removeItem(KEY_PLAN);
   else await AsyncStorage.setItem(KEY_PLAN, JSON.stringify(plan));
+}
+
+export async function loadDemoFriends(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(KEY_DEMO_FRIENDS);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveDemoFriends(ids: string[]): Promise<void> {
+  await AsyncStorage.setItem(KEY_DEMO_FRIENDS, JSON.stringify(ids));
 }

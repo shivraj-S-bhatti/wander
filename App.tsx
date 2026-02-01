@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
@@ -21,6 +22,7 @@ import { ProfileDetailScreen } from './src/screens/ProfileDetailScreen';
 import { LeaderboardScreen } from './src/screens/LeaderboardScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { SignupScreen } from './src/screens/SignupScreen';
+import { PlanModal } from './src/components/PlanModal';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -36,13 +38,16 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+  const tabBarPaddingBottom = insets.bottom + 8;
   return (
+    <>
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         headerShown: false,
-        tabBarStyle: { height: 64, paddingBottom: 8, paddingTop: 8 },
+        tabBarStyle: { height: 64 + insets.bottom, paddingBottom: tabBarPaddingBottom, paddingTop: 8 },
         tabBarLabelStyle: { fontSize: 14, fontWeight: '600' },
       }}
     >
@@ -87,14 +92,17 @@ function MainTabs() {
         }}
       />
     </Tab.Navigator>
+    <PlanModal />
+    </>
   );
 }
 
 function RootNavigator() {
   const token = useAppSelector((state) => state.auth.token);
+  const initialRoute = token ? 'MainTabs' : 'Login';
   return (
     <Stack.Navigator
-      initialRouteName={token ? 'MainTabs' : 'Login'}
+      initialRouteName={initialRoute}
       screenOptions={{ headerShown: true }}
     >
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
@@ -126,15 +134,17 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <AuthHydration>
-        <StoreProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
-          <StatusBar style="dark" />
-        </StoreProvider>
-      </AuthHydration>
-    </Provider>
+    <SafeAreaProvider>
+      <Provider store={store}>
+        <AuthHydration>
+          <StoreProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+            <StatusBar style="dark" />
+          </StoreProvider>
+        </AuthHydration>
+      </Provider>
+    </SafeAreaProvider>
   );
 }

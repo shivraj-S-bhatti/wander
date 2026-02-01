@@ -59,6 +59,17 @@ export function ItineraryScreen() {
             </View>
           </View>
         ))}
+        {events.map((ev, index) => (
+          <View key={ev.id} style={styles.stepRow}>
+            <View style={[styles.stepNum, styles.stepNumEvent]}>
+              <Text style={styles.stepNumText}>{places.length + index + 1}</Text>
+            </View>
+            <View style={styles.stepInfo}>
+              <Text style={styles.stepName}>{ev.title}</Text>
+              <Text style={styles.stepCategory}>Volunteer</Text>
+            </View>
+          </View>
+        ))}
         <TouchableOpacity style={styles.endPlanBtn} onPress={endPlan}>
           <Text style={styles.endPlanBtnText}>End plan</Text>
         </TouchableOpacity>
@@ -106,6 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
+  stepNumEvent: { backgroundColor: '#22c55e' },
   stepNumText: { fontSize: 14, fontWeight: '700', color: colors.white },
   stepInfo: { flex: 1 },
   stepName: { fontSize: 16, fontWeight: '600', color: colors.black },

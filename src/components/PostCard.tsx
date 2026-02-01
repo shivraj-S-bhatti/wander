@@ -1,10 +1,11 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CURRENT_USER_ID, DEMO_USERS } from '../data/demo';
+import type { CheckinBadge, Post } from '../data/demo';
 import { colors } from '../theme';
 import { formatRelative } from '../utils/time';
 import { getFaceSource } from '../utils/avatarFaces';
-import type { Checkin, CheckinBadge } from '../data/demo';
 
 const BADGE_ICONS: Record<CheckinBadge, keyof typeof Ionicons.glyphMap> = {
   'Local business': 'storefront-outline',
@@ -13,25 +14,26 @@ const BADGE_ICONS: Record<CheckinBadge, keyof typeof Ionicons.glyphMap> = {
   'Public transport': 'bus-outline',
 };
 
+const CARD_MAX_WIDTH = 380;
+const ACTIVITY_IMAGE_HEIGHT = 220;
+
 type Props = {
-  checkin: Checkin;
-  placeName: string;
-  userName: string;
-  avatarFaceKey?: string;
-  activityImageSource?: number;
-  userId?: string;
+  post: Post;
+  onPress?: () => void;
   isFriend?: boolean;
   onAddFriend?: (userId: string) => void;
 };
 
-export function CommunityFeedCard({ checkin, placeName, userName, avatarFaceKey, activityImageSource, userId, isFriend, onAddFriend }: Props) {
-  const review = checkin.note ?? '';
-  const rating = checkin.rating != null ? checkin.rating.toFixed(1) : null;
-  const faceSrc = getFaceSource(avatarFaceKey);
+export function PostCard({ post, onPress, isFriend, onAddFriend }: Props) {
+  const user = DEMO_USERS.find((u) => u.id === post.userId);
+  const userName = user?.name ?? 'Someone';
+  const faceSrc = getFaceSource(user?.avatar);
   const initial = userName.charAt(0).toUpperCase();
-  const badges = checkin.badges ?? [];
+  const ratingDisplay = post.rating > 0 ? post.rating.toFixed(1) : null;
+  const badges = post.badges ?? [];
+  const mainImageUri = post.imageUris?.[0];
 
-  return (
+  const content = (
     <View style={styles.card}>
       <View style={styles.row}>
         <View style={styles.avatarWrap}>
@@ -49,9 +51,11 @@ export function CommunityFeedCard({ checkin, placeName, userName, avatarFaceKey,
         </View>
         <View style={styles.main}>
           <Text style={styles.name}>{userName}</Text>
-          {review ? <Text style={styles.review} numberOfLines={2}>{review}</Text> : null}
-          <Text style={styles.place}>{placeName}</Text>
-          <Text style={styles.date}>{formatRelative(checkin.ts)}</Text>
+          <Text style={styles.title} numberOfLines={2}>{post.what}</Text>
+          {post.placeName ? (
+            <Text style={styles.place} numberOfLines={1}>{post.placeName}</Text>
+          ) : null}
+          <Text style={styles.date}>{formatRelative(post.ts)}</Text>
           {badges.length > 0 && (
             <View style={styles.badgesRow}>
               {badges.map((b) => (
@@ -63,31 +67,54 @@ export function CommunityFeedCard({ checkin, placeName, userName, avatarFaceKey,
             </View>
           )}
         </View>
-        {rating != null && (
+        {ratingDisplay != null && (
           <View style={styles.ratingCircle}>
-            <Text style={styles.ratingText}>{rating}</Text>
+            <Text style={styles.ratingText}>{ratingDisplay}</Text>
           </View>
         )}
       </View>
-      {activityImageSource != null && (
-        <Image source={activityImageSource} style={styles.activityImage} resizeMode="cover" />
+      {mainImageUri != null && (
+        <Image source={{ uri: mainImageUri }} style={styles.activityImage} resizeMode="cover" />
       )}
       <View style={styles.actionsRow}>
         <View style={styles.actionItem}>
           <Ionicons name="heart-outline" size={18} color={colors.textMuted} />
-          <Text style={styles.actionText}>12</Text>
+          <Text style={styles.actionText}>0</Text>
         </View>
         <View style={styles.actionItem}>
           <Ionicons name="chatbubble-outline" size={18} color={colors.textMuted} />
-          <Text style={styles.actionText}>3</Text>
+          <Text style={styles.actionText}>0</Text>
         </View>
       </View>
+      {post.userId !== CURRENT_USER_ID && (onAddFriend != null || isFriend) && (
+        <View style={styles.addFriendRow}>
+          {onAddFriend != null && !isFriend && (
+            <TouchableOpacity
+              style={styles.addFriendBtn}
+              onPress={() => onAddFriend(post.userId)}
+              accessibilityLabel="Add friend"
+              accessibilityRole="button"
+            >
+              <Ionicons name="person-add-outline" size={18} color={colors.accent} />
+              <Text style={styles.addFriendText}>Add friend</Text>
+            </TouchableOpacity>
+          )}
+          {isFriend && (
+            <View style={styles.friendsLabel}>
+              <Ionicons name="checkmark-circle" size={18} color={colors.textMuted} />
+              <Text style={styles.friendsText}>Friends</Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
-}
 
-const CARD_MAX_WIDTH = 380;
-const ACTIVITY_IMAGE_HEIGHT = 140;
+  if (onPress) {
+    return <TouchableOpacity onPress={onPress} activeOpacity={0.8}>{content}</TouchableOpacity>;
+  }
+  return content;
+}
 
 const styles = StyleSheet.create({
   card: {
@@ -120,19 +147,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitial: { fontSize: 16, fontWeight: '600', color: colors.textMuted },
-  main: { flex: 1 },
-  name: { fontWeight: '700', fontSize: 16, marginBottom: 4 },
-  review: { fontSize: 14, color: colors.black, marginBottom: 4 },
+  main: { flex: 1, minWidth: 0 },
+  name: { fontWeight: '700', fontSize: 16, marginBottom: 2 },
+  title: { fontWeight: '600', fontSize: 15, color: colors.black, marginBottom: 2 },
   place: { fontSize: 13, color: colors.textMuted, marginBottom: 2 },
   date: { fontSize: 12, color: colors.textMuted },
   ratingCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: 8,
   },
   ratingText: { fontSize: 14, fontWeight: '700', color: colors.white },
   badgesRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
@@ -175,20 +202,22 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginLeft: 4,
   },
-  addFriendItem: {
+  addFriendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 'auto',
+    marginTop: 8,
+  },
+  addFriendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.accent,
   },
-  addFriendText: { fontSize: 12, fontWeight: '600', color: colors.accent, marginLeft: 4 },
-  friendsItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 'auto',
-  },
+  addFriendText: { fontSize: 12, fontWeight: '600', color: colors.accent },
+  friendsLabel: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  friendsText: { fontSize: 13, color: colors.textMuted },
 });

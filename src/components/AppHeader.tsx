@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
+import { CITIES } from '../data/cities';
 
 const logoSource = require('../assets/wander-high-resolution-logo-transparent.png');
 
@@ -16,15 +18,55 @@ type Props = {
   rightElement?: React.ReactNode;
   /** Optional element in the center of the header (e.g. plan star button) */
   centerElement?: React.ReactNode;
+  /** Selected city id for "Wander [City]" — when set, shows location dropdown next to logo */
+  selectedCityId?: string;
+  onCityChange?: (cityId: string) => void;
+  /** When true, hide the city dropdown in the header (e.g. when city is shown on map overlay) */
+  hideLocationInHeader?: boolean;
 };
 
-export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement, centerElement }: Props) {
+export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement, centerElement, selectedCityId, onCityChange, hideLocationInHeader }: Props) {
+  const insets = useSafeAreaInsets();
   const showToggle = viewMode != null && onViewModeChange != null;
+  const showLocation = selectedCityId != null && onCityChange != null && !hideLocationInHeader;
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const currentCity = CITIES.find((c) => c.id === selectedCityId) ?? CITIES[0];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 8) }]}>
       <View style={styles.row}>
         <Image source={logoSource} style={styles.logo} resizeMode="contain" accessibilityLabel="Wander" />
+        {showLocation && (
+          <TouchableOpacity
+            style={styles.locationChip}
+            onPress={() => setDropdownOpen((o) => !o)}
+            accessibilityLabel={`Wander ${currentCity.displayName}. Change location`}
+            accessibilityRole="button"
+          >
+            <Text style={styles.locationChipText} numberOfLines={1}>
+              {currentCity.displayName}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+        {showLocation && dropdownOpen && (
+          <View style={styles.dropdown}>
+            {CITIES.map((city) => (
+              <TouchableOpacity
+                key={city.id}
+                style={[styles.dropdownItem, city.id === selectedCityId && styles.dropdownItemActive]}
+                onPress={() => {
+                  onCityChange(city.id);
+                  setDropdownOpen(false);
+                }}
+              >
+                <Text style={[styles.dropdownItemText, city.id === selectedCityId && styles.dropdownItemTextActive]}>
+                  {city.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
         {subtitle != null && centerElement == null ? (
           <View style={styles.subtitleWrap}>
             <Text style={styles.subtitle} numberOfLines={1}>
@@ -79,6 +121,8 @@ export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement, 
 
 const styles = StyleSheet.create({
   container: {
+    position: 'relative',
+    zIndex: 1000,
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
@@ -94,7 +138,53 @@ const styles = StyleSheet.create({
   logo: {
     height: 32,
     width: 120,
-    marginRight: 16,
+    marginRight: 8,
+  },
+  locationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: colors.border,
+    maxWidth: 140,
+  },
+  locationChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.black,
+  },
+  dropdown: {
+    position: 'absolute',
+    top: 44,
+    left: 136,
+    minWidth: 160,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1001,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownItemActive: {
+    backgroundColor: colors.border,
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    color: colors.black,
+  },
+  dropdownItemTextActive: {
+    fontWeight: '600',
+    color: colors.accent,
   },
   subtitleWrap: {
     flex: 1,

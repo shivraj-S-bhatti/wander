@@ -18,23 +18,71 @@ So: **Strava for joymaxxing** = track and share life satisfaction, not just fitn
 
 ---
 
-## Development phases (31 Jan 5:00 PM – 1 Feb 3:15 AM)
+## Development phases (31 Jan – 1 Feb)
 
-Single session building the recommendations and plan flows, then unifying the plan UX.
-
-| Phase | What we did |
-|-------|--------------|
-| **1. Recommendations** | Added `EXPO_PUBLIC_GEMINI_KEY` to config; store builds `friendSummary` from demo check-ins/places/users and exposes `refreshRecs`, `loadingRecs`, `recsError`, `lastGeminiRecs`. ProfileLayout: Preferences (vibe, budget chips) and Recommendations section with PlaceCard; tap rec → PlaceDetail. |
-| **2. Plan state & Gemini** | Store: `activePlan`, `openPlanModal`, actions; persist plan in storage. Gemini: `fetchItineraryOptions`, itinerary types. Explore: “Plan my day” FAB, Beli-style modal (location, vibe, budget, hours), Generate → fetch options. |
-| **3. Nav & Itinerary screen** | Restored MakePost as center tab; removed Plan tab. Itinerary as stack screen (“Your plan”). Plan indicator: navigate icon in header (between Wander and List\|Map); inactive = grey, active = orange + pulse. ItineraryScreen: steps list + End plan; no map widget. |
-| **4. Plan modal: confirm/reject** | After Generate, show options in same modal. List with circle + name + X to cross out; single Accept (first non–crossed-out option becomes active plan); Try again / Cancel. Fallback options if API fails; hardened Gemini parsing (envelope + direct `{ options }`). |
-| **5. Web fixes** | MapScreen.web: modal body branched on `generatedOptions` (results step); `centerElement={planHeaderButton}` on AppHeader so plan indicator shows on web. |
-| **6. Unified modal** | One modal, three modes: **form** (Plan your day), **results** (cross-out + Accept), **viewPlan** (Your plan steps + End plan). FAB opens form; header with active plan opens viewPlan; same popup, content switches by mode. |
-| **7. Polish** | Icon-only pulse: removed glow box; arrow icon fades bright/dim (opacity). Hide “Plan my day” FAB when there is an active plan. |
+Phases are framed by **what we achieved** (user-facing outcome), then the **tech** that got us there.
 
 ---
 
-## Tech stack
+### Phase 1 — Profile gets “Tonight’s recommendations”
+
+**Achievement:** Users see personalized place suggestions on Profile (vibe + budget), tap through to place detail; fallback recs when no API key.
+
+**Tech:** `EXPO_PUBLIC_GEMINI_KEY` in config. Store: `friendSummary` from demo check-ins/places/users; `refreshRecs`, `loadingRecs`, `recsError`, `lastGeminiRecs`. ProfileLayout: vibe/budget preference chips + Recommendations block with PlaceCard → PlaceDetail.
+
+---
+
+### Phase 2 — “Plan my day” from the map
+
+**Achievement:** From Explore, users open a modal, set location/vibe/budget/hours, hit Generate, and get AI itinerary options.
+
+**Tech:** Store: `activePlan`, `openPlanModal`, persist plan in AsyncStorage. Gemini: `fetchItineraryOptions`, itinerary types. MapScreen: “Plan my day” FAB, modal (constraints form) → Generate → fetch options.
+
+---
+
+### Phase 3 — Dedicated “Your plan” and clear nav
+
+**Achievement:** One place to see the current plan (steps list + End plan); plan presence visible in header (icon + pulse when active). Post is back as the center tab.
+
+**Tech:** MakePost restored as center tab; Plan removed as tab. Itinerary as stack screen (“Your plan”). AppHeader: plan indicator (navigate icon; grey inactive, orange + pulse when active). ItineraryScreen: steps list + End plan.
+
+---
+
+### Phase 4 — Choose or reject itinerary options before committing
+
+**Achievement:** After Generate, users see options in the same modal: cross out ones they don’t want, Accept one to set as active plan; Try again / Cancel. Works even when API fails (fallback options).
+
+**Tech:** Modal shows option list (circle + name + X to cross out); Accept uses first non–crossed-out option as `activePlan`. Fallback options on API failure; Gemini response parsing hardened (envelope + direct `{ options }`).
+
+---
+
+### Phase 5 — Plan flow works on web
+
+**Achievement:** Web users get the same plan flow: form → results → view plan; plan indicator appears in the header.
+
+**Tech:** MapScreen.web: modal body branched on `generatedOptions` (results step). AppHeader: `centerElement={planHeaderButton}` so plan indicator renders on web.
+
+---
+
+### Phase 6 — One modal for plan: create, confirm, view
+
+**Achievement:** Single entry point: FAB = “Plan your day” form; header (when plan active) = “Your plan” steps + End plan. No separate screens for create vs view.
+
+**Tech:** One modal, three modes: **form** (constraints), **results** (cross-out + Accept), **viewPlan** (steps + End plan). FAB opens form; header with active plan opens viewPlan; content switches by mode.
+
+---
+
+### Phase 7 — Calmer plan indicator and less clutter
+
+**Achievement:** Plan indicator is a simple pulsing icon (no glow box); “Plan my day” FAB is hidden when a plan is already active.
+
+**Tech:** Icon-only pulse (arrow opacity animation); FAB visibility gated on `activePlan == null`.
+
+---
+
+## Tech stack (current)
+
+Stack that supports the phases above. See **Architecture** for layout and **Prompts** for Gemini.
 
 | Layer | Choices |
 |-------|--------|
