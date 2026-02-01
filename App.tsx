@@ -9,14 +9,21 @@ import { colors } from './src/theme';
 import { MakePostScreen } from './src/screens/MakePostScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { CommunityScreen } from './src/screens/CommunityScreen';
+import { FriendsScreen } from './src/screens/FriendsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { PlaceDetailScreen } from './src/screens/PlaceDetailScreen';
 import { ProfileDetailScreen } from './src/screens/ProfileDetailScreen';
+import { LeaderboardScreen } from './src/screens/LeaderboardScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
+import { SignupScreen } from './src/screens/SignupScreen';
 
 export type RootStackParamList = {
+  Login: undefined;
+  Signup: undefined;
   MainTabs: undefined;
   PlaceDetail: { placeId: string };
   ProfileDetail: { userId: string };
+  Leaderboard: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -42,19 +49,27 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="MakePost"
-        component={MakePostScreen}
-        options={{
-          tabBarLabel: 'Make a post',
-          tabBarIcon: ({ color, size }) => <Ionicons name="add" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
         name="Community"
         component={CommunityScreen}
         options={{
           tabBarLabel: 'Community',
-          tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="globe-outline" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="MakePost"
+        component={MakePostScreen}
+        options={{
+          tabBarLabel: 'Post',
+          tabBarIcon: ({ color, size }) => <Ionicons name="add" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Friends"
+        component={FriendsScreen}
+        options={{
+          tabBarLabel: 'Friends',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />
       <Tab.Screen
@@ -73,7 +88,9 @@ export default function App() {
   return (
     <StoreProvider>
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: true }}>
+        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: true }}>
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
           <Stack.Screen
             name="PlaceDetail"
@@ -84,6 +101,11 @@ export default function App() {
             name="ProfileDetail"
             component={ProfileDetailScreen}
             options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Leaderboard"
+            component={LeaderboardScreen}
+            options={{ title: 'Leaderboard' }}
           />
         </Stack.Navigator>
         <StatusBar style="dark" />

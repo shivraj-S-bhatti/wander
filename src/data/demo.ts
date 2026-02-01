@@ -54,6 +54,15 @@ export type Post = {
   hoursSpent?: number;
 };
 
+export type Friend = {
+  id: string;
+  username: string;
+  avatar?: string;
+  civicScore: number;
+  streak: number;
+  rank: number;
+};
+
 const now = Date.now();
 const hour = 60 * 60 * 1000;
 const day = 24 * hour;
@@ -67,6 +76,8 @@ export const DEMO_USERS: User[] = [
   { id: 'u_2', name: 'Sam', avatar: undefined },
   { id: 'u_3', name: 'Jordan', avatar: undefined },
   { id: 'u_4', name: 'Riley', avatar: undefined },
+  { id: 'u_5', name: 'Casey', avatar: undefined },
+  { id: 'u_6', name: 'Morgan', avatar: undefined },
 ];
 
 export const DEMO_PLACES: Place[] = [
@@ -182,6 +193,15 @@ export const DEMO_EVENTS: Event[] = [
     pointsReward: 20,
     joinedUserIds: ['u_4'],
   },
+];
+
+export const DEMO_FRIENDS: Friend[] = [
+  { id: 'u_1', username: 'Alex', avatar: undefined, civicScore: 320, streak: 7, rank: 1 },
+  { id: 'u_2', username: 'Sam', avatar: undefined, civicScore: 280, streak: 5, rank: 2 },
+  { id: 'u_3', username: 'Jordan', avatar: undefined, civicScore: 245, streak: 12, rank: 3 },
+  { id: 'u_4', username: 'Riley', avatar: undefined, civicScore: 190, streak: 3, rank: 4 },
+  { id: 'u_5', username: 'Casey', avatar: undefined, civicScore: 165, streak: 2, rank: 5 },
+  { id: 'u_6', username: 'Morgan', avatar: undefined, civicScore: 120, streak: 1, rank: 6 },
 ];
 
 export const CURRENT_USER_ID = 'u_me';

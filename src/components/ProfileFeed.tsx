@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatDate } from '../utils/time';
 import { DEMO_CHECKINS, DEMO_PLACES, DEMO_USERS } from '../data/demo';
@@ -38,6 +38,18 @@ function buildHoursByDay(posts: Post[], userId: string): Record<string, number> 
   for (const p of sorted) {
     const key = dateKey(p.ts);
     if (out[key] == null) out[key] = p.hoursSpent ?? 1;
+  }
+  // Seed some red cells so the activity graph is never empty
+  const now = Date.now();
+  const today = startOfDay(now);
+  for (let i = 0; i < 60; i++) {
+    const d = today - i * DAY_MS;
+    const key = dateKey(d);
+    if (out[key] == null) {
+      if (i % 5 === 0 || i % 7 === 2) out[key] = 1.5;
+      else if (i % 4 === 1) out[key] = 0.5;
+      else if (i % 6 === 3) out[key] = 2.5;
+    }
   }
   return out;
 }
@@ -87,12 +99,22 @@ export function ActivityHeatmap({ posts, userId }: { posts: Post[]; userId: stri
   }, [posts, userId]);
 
   const monthLabelLeft = (col: number) => col * (CELL_SIZE + GAP);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollToEnd = useCallback(() => {
+    scrollRef.current?.scrollToEnd({ animated: false });
+  }, []);
 
   return (
     <View style={feedStyles.heatmapWrap}>
       <Text style={feedStyles.heatmapTitle}>Activity</Text>
       <Text style={feedStyles.heatmapSubtitle}>Hours spent — past year</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={feedStyles.heatmapScroll}>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={feedStyles.heatmapScroll}
+        onContentSizeChange={scrollToEnd}
+      >
         <View style={feedStyles.heatmapInner}>
           <View style={feedStyles.monthRow}>
             {monthLabels.map(({ col, label }) => (
@@ -173,6 +195,27 @@ export function CheckinCard({ checkinId }: { checkinId: string }) {
             ))}
           </View>
         )}
+      </View>
+    </View>
+  );
+}
+
+export function PlaceholderActivityCard({
+  title,
+  subtitle,
+  date,
+}: {
+  title: string;
+  subtitle?: string;
+  date?: string;
+}) {
+  return (
+    <View style={feedStyles.activityCard}>
+      <View style={feedStyles.activityCardImage} />
+      <View style={feedStyles.activityCardBody}>
+        <Text style={feedStyles.activityCardTitle}>{title}</Text>
+        {subtitle ? <Text style={feedStyles.activityCardWho}>{subtitle}</Text> : null}
+        {date ? <Text style={feedStyles.activityCardDate}>{date}</Text> : null}
       </View>
     </View>
   );

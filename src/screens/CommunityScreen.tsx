@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppHeader } from '../components/AppHeader';
 import { EventCard } from '../components/EventCard';
 import { useStore } from '../state/store';
 import { colors } from '../theme';
+import type { RootStackParamList } from '../../App';
+
+type CommunityNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
 export function CommunityScreen() {
+  const navigation = useNavigation<CommunityNavProp>();
   const { state, joinEvent } = useStore();
   const events = state.events;
   const [pointsToast, setPointsToast] = useState<number | null>(null);
@@ -16,10 +23,22 @@ export function CommunityScreen() {
     setTimeout(() => setPointsToast(null), 2500);
   };
 
+  const openLeaderboard = () => {
+    navigation.navigate('Leaderboard');
+  };
+
   return (
     <View style={styles.container}>
-      <AppHeader />
-      <Text style={styles.subtitle}>Join events, earn civic points</Text>
+      <AppHeader subtitle="Join events, earn civic points" />
+      <TouchableOpacity
+        style={styles.leaderboardButton}
+        onPress={openLeaderboard}
+        accessibilityLabel="View leaderboard"
+        accessibilityRole="button"
+      >
+        <Ionicons name="podium-outline" size={20} color={colors.white} />
+        <Text style={styles.leaderboardButtonText}>View leaderboard</Text>
+      </TouchableOpacity>
       <FlatList
         data={events}
         keyExtractor={(item) => item.id}
@@ -44,7 +63,19 @@ export function CommunityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  subtitle: { fontSize: 14, color: colors.textMuted, paddingHorizontal: 16, paddingBottom: 12 },
+  leaderboardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: colors.accent,
+  },
+  leaderboardButtonText: { fontSize: 16, fontWeight: '600', color: colors.white },
   list: { paddingBottom: 24 },
   pointsToast: {
     position: 'absolute',

@@ -10,15 +10,24 @@ type ViewMode = 'list' | 'map';
 type Props = {
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
+  /** Optional text shown next to the logo (e.g. "Join events, earn civic points") */
+  subtitle?: string;
 };
 
-export function AppHeader({ viewMode, onViewModeChange }: Props) {
+export function AppHeader({ viewMode, onViewModeChange, subtitle }: Props) {
   const showToggle = viewMode != null && onViewModeChange != null;
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
         <Image source={logoSource} style={styles.logo} resizeMode="contain" accessibilityLabel="Wander" />
+        {subtitle != null ? (
+          <View style={styles.subtitleWrap}>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          </View>
+        ) : null}
         {showToggle && (
           <View style={styles.toggle}>
             <TouchableOpacity
@@ -76,6 +85,16 @@ const styles = StyleSheet.create({
     height: 32,
     width: 120,
     marginRight: 16,
+  },
+  subtitleWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.textMuted,
   },
   toggle: {
     flexDirection: 'row',
