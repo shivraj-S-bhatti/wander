@@ -189,23 +189,33 @@ export function MapScreen() {
     closePlanModal();
   };
 
-  const planHeaderButton = (
+  const planHeaderButton = !hasActivePlan ? (
     <TouchableOpacity
       onPress={onPlanHeaderPress}
-      style={[styles.planHeaderBtn, hasActivePlan && styles.planHeaderBtnActive]}
-      accessibilityLabel={hasActivePlan ? 'Active plan' : 'View plan'}
+      style={styles.planHeaderBtn}
+      accessibilityLabel="View plan"
       accessibilityRole="button"
     >
-      {hasActivePlan ? (
-        <View style={styles.planStarBtnInnerWrap}>
-          <Animated.View style={{ opacity: glowAnim }}>
-            <Ionicons name="navigate" size={24} color={PLAN_STAR_ORANGE} />
-          </Animated.View>
-          <Text style={[styles.planStarLabel, { color: PLAN_STAR_ORANGE }]}>Active plan</Text>
-        </View>
-      ) : (
-        <Ionicons name="navigate" size={24} color={colors.textMuted} />
-      )}
+      <Ionicons name="navigate" size={24} color={colors.textMuted} />
+    </TouchableOpacity>
+  ) : undefined;
+
+  const planFabButton = hasActivePlan ? (
+    <TouchableOpacity
+      onPress={openPlanModalViewPlan}
+      style={styles.fabActivePlan}
+      accessibilityLabel="Active plan"
+      accessibilityRole="button"
+    >
+      <Animated.View style={{ opacity: glowAnim }}>
+        <Ionicons name="navigate" size={24} color={colors.white} />
+      </Animated.View>
+      <Text style={styles.fabActivePlanLabel}>Active plan</Text>
+    </TouchableOpacity>
+  ) : (
+    <TouchableOpacity style={styles.fab} onPress={openPlanModal} accessibilityLabel="Plan my day" accessibilityRole="button">
+      <Ionicons name="navigate" size={24} color={colors.white} />
+      <Text style={styles.fabLabel}>Plan my day</Text>
     </TouchableOpacity>
   );
 
@@ -231,6 +241,9 @@ export function MapScreen() {
         center: DEMO_MAP_CENTER,
         zoom: 14,
         mapTypeId: 'roadmap',
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
       mapInstanceRef.current = map;
 
@@ -328,12 +341,7 @@ export function MapScreen() {
               </View>
             )}
           </View>
-          {!hasActivePlan && (
-            <TouchableOpacity style={styles.fab} onPress={openPlanModal} accessibilityLabel="Plan my day" accessibilityRole="button">
-              <Ionicons name="navigate" size={24} color={colors.white} />
-              <Text style={styles.fabLabel}>Plan my day</Text>
-            </TouchableOpacity>
-          )}
+          {planFabButton}
         </View>
       )}
       <Modal visible={planModalVisible} transparent animationType="fade">
@@ -517,9 +525,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
-  planHeaderBtnActive: {},
-  planStarBtnInnerWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  planStarLabel: { fontSize: 12, fontWeight: '600' },
   fab: {
     position: 'absolute',
     bottom: 24,
@@ -538,6 +543,24 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   fabLabel: { fontSize: 16, fontWeight: '700', color: colors.white },
+  fabActivePlan: {
+    position: 'absolute',
+    bottom: 24,
+    left: '50%',
+    marginLeft: -80,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: PLAN_STAR_ORANGE,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 28,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  fabActivePlanLabel: { fontSize: 16, fontWeight: '700', color: colors.white },
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.overlay,
