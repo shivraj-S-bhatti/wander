@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 import { getFaceSource } from '../utils/avatarFaces';
@@ -7,11 +7,14 @@ import type { Friend } from '../data/demo';
 
 type Props = {
   entry: Friend;
+  isFriend?: boolean;
+  onAddFriend?: (userId: string) => void;
 };
 
-export function LeaderboardCard({ entry }: Props) {
+export function LeaderboardCard({ entry, isFriend, onAddFriend }: Props) {
   const initial = entry.username.charAt(0).toUpperCase();
   const faceSrc = getFaceSource(entry.avatar);
+  const showAddFriend = onAddFriend != null && !isFriend;
 
   return (
     <View style={styles.card}>
@@ -45,6 +48,23 @@ export function LeaderboardCard({ entry }: Props) {
         )}
         <Text style={styles.rank}>#{entry.rank}</Text>
       </View>
+      {showAddFriend && (
+        <TouchableOpacity
+          style={styles.addFriendBtn}
+          onPress={() => onAddFriend(entry.id)}
+          accessibilityLabel="Add friend"
+          accessibilityRole="button"
+        >
+          <Ionicons name="person-add-outline" size={20} color={colors.accent} />
+          <Text style={styles.addFriendText}>Add friend</Text>
+        </TouchableOpacity>
+      )}
+      {isFriend && (
+        <View style={styles.friendsLabel}>
+          <Ionicons name="checkmark-circle" size={20} color={colors.textMuted} />
+          <Text style={styles.friendsText}>Friends</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -105,4 +125,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.accent,
   },
+  addFriendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  addFriendText: { fontSize: 13, fontWeight: '600', color: colors.accent },
+  friendsLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 12,
+  },
+  friendsText: { fontSize: 13, color: colors.textMuted },
 });

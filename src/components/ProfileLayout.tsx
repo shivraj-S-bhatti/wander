@@ -44,10 +44,15 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
   const authUser = useSelector((s: RootState) => s.auth.user);
   const myFriendIds = useSelector((s: RootState) => s.auth.user?.friends ?? []);
   const isAlreadyFriend = myFriendIds.includes(userId);
-  const { state, getBadges, getLevel, getStreak, getNextBadgeProgress, setPrefs, refreshRecs } = useStore();
+  const { state, getBadges, getLevel, getStreak, getNextBadgeProgress, setPrefs, refreshRecs, addDemoFriend, removeDemoFriend } = useStore();
   const { loadingRecs, recsError, lastGeminiRecs } = state.profile;
+  const demoFriendIds = state.demoFriendIds;
   const [sendingRequest, setSendingRequest] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+
+  const isDemoUser = userId !== CURRENT_USER_ID && DEMO_USERS.some((u) => u.id === userId);
+  const isDemoFriend = demoFriendIds.includes(userId);
+  const isFriend = isAlreadyFriend || isDemoFriend;
 
   const handleSendFriendRequest = useCallback(async () => {
     if (!token) {
@@ -97,7 +102,31 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
             <Ionicons name="chevron-back" size={28} color={colors.black} />
           </TouchableOpacity>
           <Text style={styles.headerName} numberOfLines={1}>{user.name}</Text>
-          {!isAlreadyFriend ? (
+          {isFriend ? (
+            <View style={styles.headerFriendsBadge}>
+              <Ionicons name="people" size={20} color={colors.textMuted} />
+              <Text style={styles.headerFriendsBadgeText}>Friends</Text>
+              {isDemoFriend && (
+                <TouchableOpacity
+                  onPress={() => removeDemoFriend(userId)}
+                  style={styles.headerRemoveFriend}
+                  accessibilityLabel="Remove friend"
+                  accessibilityRole="button"
+                >
+                  <Ionicons name="close" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : isDemoUser ? (
+            <TouchableOpacity
+              style={styles.headerPlusBtn}
+              onPress={() => addDemoFriend(userId)}
+              accessibilityLabel="Add friend"
+              accessibilityRole="button"
+            >
+              <Ionicons name="person-add" size={24} color={colors.white} />
+            </TouchableOpacity>
+          ) : (
             <TouchableOpacity
               style={styles.headerPlusBtn}
               onPress={handleSendFriendRequest}
@@ -113,11 +142,6 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
                 <Ionicons name="add" size={24} color={colors.white} />
               )}
             </TouchableOpacity>
-          ) : (
-            <View style={styles.headerFriendsBadge}>
-              <Ionicons name="people" size={20} color={colors.textMuted} />
-              <Text style={styles.headerFriendsBadgeText}>Friends</Text>
-            </View>
           )}
         </View>
       )}
@@ -329,6 +353,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   headerFriendsBadgeText: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
+  headerRemoveFriend: { marginLeft: 8, padding: 4 },
   list: { paddingBottom: 24, backgroundColor: colors.background },
   profileSection: {
     backgroundColor: colors.white,

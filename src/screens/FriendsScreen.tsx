@@ -16,14 +16,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { FriendCard } from '../components/FriendCard';
+import { DEMO_USERS } from '../data/demo';
+import type { Friend } from '../data/demo';
 import * as friendRequestsApi from '../services/friendRequests';
 import type { FriendRequestReceived } from '../services/friendRequests';
+import { useStore } from '../state/store';
 import * as usersApi from '../services/users';
 import type { ApiUser } from '../services/users';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../../App';
 import type { RootState } from '../state/reduxStore';
-import type { Friend } from '../data/demo';
 
 type FriendsNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -40,6 +42,7 @@ function apiUserToFriend(u: ApiUser): Friend {
 
 export function FriendsScreen() {
   const navigation = useNavigation<FriendsNavProp>();
+  const { state } = useStore();
   const token = useSelector((s: RootState) => s.auth.token);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -47,7 +50,7 @@ export function FriendsScreen() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [actingId, setActingId] = useState<string | null>(null);
 
-  const [friends, setFriends] = useState<ApiUser[]>([]);
+  const [apiFriends, setApiFriends] = useState<ApiUser[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<ApiUser[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -55,18 +58,33 @@ export function FriendsScreen() {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const demoFriendsAsApiUsers: ApiUser[] = useMemo(() => {
+    const ids = state?.demoFriendIds ?? [];
+    return ids
+      .map((id) => DEMO_USERS.find((u) => u.id === id))
+      .filter((u): u is (typeof DEMO_USERS)[0] => !!u)
+      .map((u) => ({ id: u.id, username: u.name, email: '' }));
+  }, [state?.demoFriendIds]);
+
+  const friends: ApiUser[] = useMemo(() => {
+    const byId = new Map<string, ApiUser>();
+    demoFriendsAsApiUsers.forEach((u) => byId.set(u.id, u));
+    apiFriends.forEach((u) => byId.set(u.id, u));
+    return Array.from(byId.values());
+  }, [apiFriends, demoFriendsAsApiUsers]);
+
   const loadFriends = useCallback(async () => {
     if (!token) {
-      setFriends([]);
+      setApiFriends([]);
       setFriendsLoading(false);
       return;
     }
     setFriendsLoading(true);
     try {
       const list = await usersApi.getMyFriends(token);
-      setFriends(list);
+      setApiFriends(list);
     } catch {
-      setFriends([]);
+      setApiFriends([]);
     } finally {
       setFriendsLoading(false);
     }

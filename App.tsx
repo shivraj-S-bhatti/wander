@@ -39,9 +39,6 @@ const Tab = createBottomTabNavigator();
 function MainTabs() {
   const insets = useSafeAreaInsets();
   const tabBarPaddingBottom = insets.bottom + 8;
-  // #region agent log
-  if (typeof fetch === 'function') fetch('http://127.0.0.1:7245/ingest/398bfe81-bbbf-4c15-873e-38cc5dbcd7b0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:MainTabs',message:'tab bar insets',data:{bottom:insets.bottom,height:64+insets.bottom},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   return (
     <Tab.Navigator
       screenOptions={{
@@ -99,9 +96,6 @@ function MainTabs() {
 function RootNavigator() {
   const token = useAppSelector((state) => state.auth.token);
   const initialRoute = token ? 'MainTabs' : 'Login';
-  // #region agent log
-  if (typeof fetch === 'function') fetch('http://127.0.0.1:7245/ingest/398bfe81-bbbf-4c15-873e-38cc5dbcd7b0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:RootNavigator',message:'initial route',data:{hasToken:!!token,initialRoute},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
   return (
     <Stack.Navigator
       initialRouteName={initialRoute}

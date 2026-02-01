@@ -40,11 +40,6 @@ export function MapScreen() {
   const glowAnim = useRef(new Animated.Value(0.4)).current;
   const hasActivePlan = state.plan.activePlan != null;
 
-  // #region agent log
-  useEffect(() => {
-    if (typeof fetch === 'function') fetch('http://127.0.0.1:7245/ingest/398bfe81-bbbf-4c15-873e-38cc5dbcd7b0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MapScreen.tsx:mount',message:'MapScreen mounted',data:{viewMode},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-  }, []);
-  // #endregion
   useEffect(() => {
     if (!hasActivePlan) return;
     const loop = Animated.loop(

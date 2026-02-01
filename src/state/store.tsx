@@ -12,7 +12,7 @@ import {
 } from '../data/demo';
 import { GEMINI_API_KEY } from '../config';
 import { fetchRecommendations, type GeminiRecItem, type MemorySummary } from '../services/gemini';
-import { loadProfile, loadPlan, loadPosts, saveProfile, savePlan, savePosts, type StoredProfile, type StoredPost } from '../services/storage';
+import { loadProfile, loadPlan, loadPosts, loadDemoFriends, saveProfile, savePlan, savePosts, saveDemoFriends, type StoredProfile, type StoredPost } from '../services/storage';
 
 // ——— Civic points rules (hardcoded)
 const POINTS_JOIN_EVENT = (e: Event) => e.pointsReward;
@@ -74,6 +74,7 @@ type AppState = {
   plan: PlanState;
   events: Event[];
   posts: Post[];
+  demoFriendIds: string[];
 };
 
 type Action =
@@ -92,7 +93,10 @@ type Action =
   | { type: 'SET_ACTIVE_PLAN'; payload: ActivePlan | null }
   | { type: 'CLEAR_ACTIVE_PLAN' }
   | { type: 'SET_OPEN_PLAN_MODAL'; payload: boolean }
-  | { type: 'LOAD_PLAN'; payload: ActivePlan | null };
+  | { type: 'LOAD_PLAN'; payload: ActivePlan | null }
+  | { type: 'ADD_DEMO_FRIEND'; payload: string }
+  | { type: 'REMOVE_DEMO_FRIEND'; payload: string }
+  | { type: 'LOAD_DEMO_FRIENDS'; payload: string[] };
 
 function profileReducer(state: ProfileState, action: Action): ProfileState {
   switch (action.type) {
@@ -191,11 +195,25 @@ function eventsReducer(state: Event[], action: Action): Event[] {
   return state;
 }
 
+function demoFriendIdsReducer(state: string[], action: Action): string[] {
+  if (action.type === 'LOAD_DEMO_FRIENDS') return action.payload;
+  if (action.type === 'ADD_DEMO_FRIEND') {
+    const id = action.payload;
+    if (id === CURRENT_USER_ID || state.includes(id)) return state;
+    const user = DEMO_USERS.find((u) => u.id === id);
+    if (!user) return state;
+    return [...state, id];
+  }
+  if (action.type === 'REMOVE_DEMO_FRIEND') return state.filter((id) => id !== action.payload);
+  return state;
+}
+
 const initialState: AppState = {
   profile: defaultProfile,
   plan: defaultPlan,
   events: DEMO_EVENTS.map((e) => ({ ...e, joinedUserIds: [...e.joinedUserIds] })),
   posts: [],
+  demoFriendIds: [],
 };
 
 function postsReducer(state: Post[], action: Action): Post[] {
@@ -241,6 +259,8 @@ type StoreContextValue = {
   setActivePlan: (plan: ActivePlan | null) => void;
   clearActivePlan: () => void;
   setOpenPlanModal: (open: boolean) => void;
+  addDemoFriend: (userId: string) => void;
+  removeDemoFriend: (userId: string) => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -255,6 +275,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
     loadPosts().then((list) => dispatch({ type: 'LOAD_POSTS', payload: list }));
     loadPlan().then((p) => dispatch({ type: 'LOAD_PLAN', payload: p }));
+    loadDemoFriends().then((ids) => dispatch({ type: 'LOAD_DEMO_FRIENDS', payload: ids }));
   }, []);
 
   useEffect(() => {
@@ -290,6 +311,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
     if (toStore.length > 0) savePosts(toStore);
   }, [state.posts]);
+
+  useEffect(() => {
+    saveDemoFriends(state.demoFriendIds);
+  }, [state.demoFriendIds]);
 
   const joinEvent = useCallback((eventId: string) => {
     dispatch({ type: 'JOIN_EVENT', eventId });
@@ -406,6 +431,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_OPEN_PLAN_MODAL', payload: open });
   }, []);
 
+  const addDemoFriend = useCallback((userId: string) => {
+    dispatch({ type: 'ADD_DEMO_FRIEND', payload: userId });
+  }, []);
+
+  const removeDemoFriend = useCallback((userId: string) => {
+    dispatch({ type: 'REMOVE_DEMO_FRIEND', payload: userId });
+  }, []);
+
   const value: StoreContextValue = {
     state,
     dispatch,
@@ -421,6 +454,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setActivePlan,
     clearActivePlan,
     setOpenPlanModal,
+    addDemoFriend,
+    removeDemoFriend,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

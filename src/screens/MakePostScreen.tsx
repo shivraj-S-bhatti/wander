@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { MonthCalendar } from '../components/MonthCalendar';
+import { DEMO_USERS } from '../data/demo';
 import * as usersApi from '../services/users';
 import type { ApiUser } from '../services/users';
 import { useStore } from '../state/store';
@@ -35,12 +36,12 @@ function startOfDay(ts: number): number {
 type SelectedFriend = { id: string; username: string };
 
 export function MakePostScreen() {
-  const { addPost } = useStore();
+  const { addPost, state } = useStore();
   const token = useSelector((s: RootState) => s.auth.token);
   const [what, setWhat] = useState('');
   const [whoWith, setWhoWith] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
-  const [friends, setFriends] = useState<ApiUser[]>([]);
+  const [apiFriends, setApiFriends] = useState<ApiUser[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [whoDropdownOpen, setWhoDropdownOpen] = useState(false);
   const [rating, setRating] = useState(0);
@@ -52,18 +53,33 @@ export function MakePostScreen() {
   const [saved, setSaved] = useState(false);
   const [pointsToast, setPointsToast] = useState(false);
 
+  const demoFriendsAsApiUsers: ApiUser[] = useMemo(() => {
+    const ids = state?.demoFriendIds ?? [];
+    return ids
+      .map((id) => DEMO_USERS.find((u) => u.id === id))
+      .filter((u): u is (typeof DEMO_USERS)[0] => !!u)
+      .map((u) => ({ id: u.id, username: u.name, email: '' }));
+  }, [state?.demoFriendIds]);
+
+  const friends: ApiUser[] = useMemo(() => {
+    const byId = new Map<string, ApiUser>();
+    demoFriendsAsApiUsers.forEach((u) => byId.set(u.id, u));
+    apiFriends.forEach((u) => byId.set(u.id, u));
+    return Array.from(byId.values());
+  }, [apiFriends, demoFriendsAsApiUsers]);
+
   const loadFriends = useCallback(async () => {
     if (!token) {
-      setFriends([]);
+      setApiFriends([]);
       setFriendsLoading(false);
       return;
     }
     setFriendsLoading(true);
     try {
       const list = await usersApi.getMyFriends(token);
-      setFriends(list);
+      setApiFriends(list);
     } catch {
-      setFriends([]);
+      setApiFriends([]);
     } finally {
       setFriendsLoading(false);
     }

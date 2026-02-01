@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 import { formatRelative } from '../utils/time';
@@ -19,9 +19,12 @@ type Props = {
   userName: string;
   avatarFaceKey?: string;
   activityImageSource?: number;
+  userId?: string;
+  isFriend?: boolean;
+  onAddFriend?: (userId: string) => void;
 };
 
-export function CommunityFeedCard({ checkin, placeName, userName, avatarFaceKey, activityImageSource }: Props) {
+export function CommunityFeedCard({ checkin, placeName, userName, avatarFaceKey, activityImageSource, userId, isFriend, onAddFriend }: Props) {
   const review = checkin.note ?? '';
   const rating = checkin.rating != null ? checkin.rating.toFixed(1) : null;
   const faceSrc = getFaceSource(avatarFaceKey);
@@ -171,5 +174,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
     marginLeft: 4,
+  },
+  addFriendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  addFriendText: { fontSize: 12, fontWeight: '600', color: colors.accent, marginLeft: 4 },
+  friendsItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
   },
 });
