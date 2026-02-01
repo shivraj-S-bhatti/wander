@@ -4,6 +4,8 @@ import {
   DEMO_CHECKINS,
   DEMO_EVENTS,
   DEMO_PLACES,
+  DEMO_POSTS_CURRENT_USER,
+  DEMO_PROFILE_INITIAL,
   DEMO_RECS,
   DEMO_USERS,
   type Event,
@@ -259,6 +261,8 @@ function postsReducer(state: Post[], action: Action): Post[] {
       imageUris: p.imageUris ?? [],
       tags: p.tags ?? [],
       hoursSpent: p.hoursSpent,
+      ...(('placeName' in p && p.placeName != null) && { placeName: p.placeName }),
+      ...(('badges' in p && p.badges != null) && { badges: p.badges }),
     }));
   }
   if (action.type === 'ADD_POST') return [action.payload, ...state];
@@ -305,10 +309,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadProfile().then((p) => {
-      dispatch({ type: 'LOAD_PROFILE', payload: p });
-      if (p?.joinedEventIds?.length) dispatch({ type: 'MERGE_JOINED_INTO_EVENTS', joinedEventIds: p.joinedEventIds });
+      const useDemoProfile = p == null || (typeof p?.civicPoints === 'number' && p.civicPoints === 0);
+      const profile = useDemoProfile ? (DEMO_PROFILE_INITIAL as StoredProfile) : p!;
+      dispatch({ type: 'LOAD_PROFILE', payload: profile });
+      if (profile?.joinedEventIds?.length) dispatch({ type: 'MERGE_JOINED_INTO_EVENTS', joinedEventIds: profile.joinedEventIds });
     });
-    loadPosts().then((list) => dispatch({ type: 'LOAD_POSTS', payload: list }));
+    loadPosts().then((list) => {
+      const posts = list.length > 0 ? list : DEMO_POSTS_CURRENT_USER;
+      dispatch({ type: 'LOAD_POSTS', payload: posts });
+    });
     loadPlan().then((p) => dispatch({ type: 'LOAD_PLAN', payload: p }));
     loadDemoFriends().then((ids) => dispatch({ type: 'LOAD_DEMO_FRIENDS', payload: ids }));
   }, []);

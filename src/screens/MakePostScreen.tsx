@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { PlanHeaderButton } from '../components/PlanHeaderButton';
@@ -55,6 +58,8 @@ export function MakePostScreen() {
   const [selectedDateTs, setSelectedDateTs] = useState(startOfDay(Date.now()));
   const [saved, setSaved] = useState(false);
   const [pointsToast, setPointsToast] = useState(false);
+  const [imageUris, setImageUris] = useState<string[]>([]);
+  const [placeName, setPlaceName] = useState('');
 
   const demoFriendsAsApiUsers: ApiUser[] = useMemo(() => {
     const ids = state?.demoFriendIds ?? [];
@@ -119,6 +124,22 @@ export function MakePostScreen() {
     setCustomTagInput('');
   };
 
+  const pickImage = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to your photos to attach an image.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: false,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      setImageUris((prev) => [...prev, result.assets[0].uri].slice(0, 1));
+    }
+  }, []);
+
   const handleSave = () => {
     if (!what.trim()) return;
     const whoWithValue =
@@ -132,9 +153,11 @@ export function MakePostScreen() {
         whoWith: whoWithValue,
         rating: rating || 0,
         experience: experience.trim(),
-        imageUris: [],
+        imageUris,
         tags,
         hoursSpent,
+        placeName: placeName.trim() || undefined,
+        badges: ['Local business'],
       },
       noonOnSelected
     );
@@ -147,6 +170,8 @@ export function MakePostScreen() {
     setExperience('');
     setHoursSpent(1);
     setTags([]);
+    setImageUris([]);
+    setPlaceName('');
     setSelectedDateTs(startOfDay(Date.now()));
     setTimeout(() => setSaved(false), 2000);
     setTimeout(() => setPointsToast(false), 2500);
@@ -163,7 +188,17 @@ export function MakePostScreen() {
           style={styles.input}
           value={what}
           onChangeText={setWhat}
-          placeholder="e.g. Coffee at The Hive"
+          placeholder="e.g. Great oat latte"
+          placeholderTextColor={colors.placeholder}
+        />
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.label}>Where / place</Text>
+        <TextInput
+          style={styles.input}
+          value={placeName}
+          onChangeText={setPlaceName}
+          placeholder="e.g. The Hive Coffee"
           placeholderTextColor={colors.placeholder}
         />
       </View>
@@ -323,9 +358,26 @@ export function MakePostScreen() {
             </View>
           ) : null}
         </View>
-        <TouchableOpacity style={styles.uploadBtn}>
-          <Text style={styles.uploadBtnText}>Upload pictures</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <Text style={styles.label}>Photo</Text>
+          {imageUris.length > 0 ? (
+            <View style={styles.imagePreviewWrap}>
+              <Image source={{ uri: imageUris[0] }} style={styles.imagePreview} resizeMode="cover" />
+              <TouchableOpacity
+                style={styles.removeImageBtn}
+                onPress={() => setImageUris([])}
+                accessibilityLabel="Remove photo"
+              >
+                <Ionicons name="close-circle" size={28} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
+              <Ionicons name="image-outline" size={24} color={colors.textMuted} style={styles.uploadBtnIcon} />
+              <Text style={styles.uploadBtnText}>Upload picture</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <TouchableOpacity
           style={[styles.saveBtn, !what.trim() && styles.saveBtnDisabled]}
           onPress={handleSave}
@@ -516,6 +568,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   uploadBtnText: { fontSize: 16, color: colors.textMuted, fontWeight: '500' },
+  uploadBtnIcon: { marginBottom: 4 },
+  imagePreviewWrap: { position: 'relative', marginBottom: 20 },
+  imagePreview: { width: '100%', height: 200, borderRadius: 12, backgroundColor: colors.border },
+  removeImageBtn: { position: 'absolute', top: 8, right: 8 },
   saveBtn: {
     backgroundColor: colors.accent,
     paddingVertical: 14,

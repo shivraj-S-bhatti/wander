@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import { CURRENT_USER_ID, DEMO_PLACES, DEMO_USERS } from '../data/demo';
+import { CURRENT_USER_ID, DEMO_PLACES, DEMO_USERS, DEMO_WANT_TO_TRY_COUNT } from '../data/demo';
 import type { Post } from '../data/demo';
 import { clearStoredAuth } from '../services/authStorage';
 import * as friendRequestsApi from '../services/friendRequests';
@@ -79,9 +79,16 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
   };
 
   const user = useMemo(() => {
+    const demoUser = DEMO_USERS.find((u) => u.id === userId);
+    const isCurrentUser = userId === CURRENT_USER_ID;
+    if (isCurrentUser && demoUser) {
+      const base = { ...demoUser, avatar: demoUser.avatar ?? 'guy4' };
+      if (isOwnProfile && authUser) return { ...base, name: authUser.username };
+      return base;
+    }
     if (displayName != null) return { id: userId, name: displayName };
     if (isOwnProfile && authUser) return { id: userId, name: authUser.username };
-    return DEMO_USERS.find((u) => u.id === userId) ?? { id: userId, name: 'Unknown' };
+    return demoUser ?? { id: userId, name: 'Unknown' };
   }, [userId, displayName, isOwnProfile, authUser]);
   const posts = useMemo(() => state.posts.filter((p) => p.userId === userId), [state.posts, userId]);
 
@@ -190,7 +197,9 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
       <View style={styles.categoryRow}>
         <Text style={styles.categoryIcon}>🔖</Text>
         <Text style={styles.categoryLabel}>Want to Try</Text>
-        <Text style={styles.categoryCount}>0</Text>
+        <Text style={styles.categoryCount}>
+          {isOwnProfile && userId === CURRENT_USER_ID ? DEMO_WANT_TO_TRY_COUNT : 0}
+        </Text>
         <Text style={styles.categoryChevron}>{'>'}</Text>
       </View>
       {isOwnProfile && (

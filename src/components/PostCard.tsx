@@ -1,10 +1,21 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { CURRENT_USER_ID, DEMO_USERS } from '../data/demo';
-import type { Post } from '../data/demo';
+import type { CheckinBadge, Post } from '../data/demo';
 import { colors } from '../theme';
 import { formatRelative } from '../utils/time';
 import { getFaceSource } from '../utils/avatarFaces';
+
+const BADGE_ICONS: Record<CheckinBadge, keyof typeof Ionicons.glyphMap> = {
+  'Local business': 'storefront-outline',
+  'Volunteer': 'heart-outline',
+  'Organized hangout': 'people-outline',
+  'Public transport': 'bus-outline',
+};
+
+const CARD_MAX_WIDTH = 380;
+const ACTIVITY_IMAGE_HEIGHT = 220;
 
 type Props = {
   post: Post;
@@ -18,6 +29,9 @@ export function PostCard({ post, onPress, isFriend, onAddFriend }: Props) {
   const userName = user?.name ?? 'Someone';
   const faceSrc = getFaceSource(user?.avatar);
   const initial = userName.charAt(0).toUpperCase();
+  const ratingDisplay = post.rating > 0 ? post.rating.toFixed(1) : null;
+  const badges = post.badges ?? [];
+  const mainImageUri = post.imageUris?.[0];
 
   const content = (
     <View style={styles.card}>
@@ -37,25 +51,43 @@ export function PostCard({ post, onPress, isFriend, onAddFriend }: Props) {
         </View>
         <View style={styles.main}>
           <Text style={styles.name}>{userName}</Text>
-          <Text style={styles.action}>Did {post.what} with {post.whoWith || '—'}</Text>
-          {post.experience ? (
-            <Text style={styles.review} numberOfLines={2}>{post.experience}</Text>
+          <Text style={styles.title} numberOfLines={2}>{post.what}</Text>
+          {post.placeName ? (
+            <Text style={styles.place} numberOfLines={1}>{post.placeName}</Text>
           ) : null}
           <Text style={styles.date}>{formatRelative(post.ts)}</Text>
-          {post.rating > 0 && <Text style={styles.rating}>★ {post.rating}</Text>}
-          {post.tags.length > 0 && (
-            <View style={styles.tagRow}>
-              {post.tags.slice(0, 4).map((t) => (
-                <View key={t} style={styles.tagChip}>
-                  <Text style={styles.tagText}>{t}</Text>
+          {badges.length > 0 && (
+            <View style={styles.badgesRow}>
+              {badges.map((b) => (
+                <View key={b} style={styles.badgeChip}>
+                  <Ionicons name={BADGE_ICONS[b]} size={12} color="#C9A227" style={styles.badgeIcon} />
+                  <Text style={styles.badgeText}>{b}</Text>
                 </View>
               ))}
             </View>
           )}
         </View>
+        {ratingDisplay != null && (
+          <View style={styles.ratingCircle}>
+            <Text style={styles.ratingText}>{ratingDisplay}</Text>
+          </View>
+        )}
+      </View>
+      {mainImageUri != null && (
+        <Image source={{ uri: mainImageUri }} style={styles.activityImage} resizeMode="cover" />
+      )}
+      <View style={styles.actionsRow}>
+        <View style={styles.actionItem}>
+          <Ionicons name="heart-outline" size={18} color={colors.textMuted} />
+          <Text style={styles.actionText}>0</Text>
+        </View>
+        <View style={styles.actionItem}>
+          <Ionicons name="chatbubble-outline" size={18} color={colors.textMuted} />
+          <Text style={styles.actionText}>0</Text>
+        </View>
       </View>
       {post.userId !== CURRENT_USER_ID && (onAddFriend != null || isFriend) && (
-        <View style={styles.actionsRow}>
+        <View style={styles.addFriendRow}>
           {onAddFriend != null && !isFriend && (
             <TouchableOpacity
               style={styles.addFriendBtn}
@@ -83,8 +115,6 @@ export function PostCard({ post, onPress, isFriend, onAddFriend }: Props) {
   }
   return content;
 }
-
-const CARD_MAX_WIDTH = 380;
 
 const styles = StyleSheet.create({
   card: {
@@ -117,20 +147,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarInitial: { fontSize: 16, fontWeight: '600', color: colors.textMuted },
-  main: { flex: 1 },
-  name: { fontWeight: '700', fontSize: 16, marginBottom: 4 },
-  action: { fontSize: 14, color: colors.black, marginBottom: 4 },
-  review: { fontSize: 13, color: colors.textMuted, marginBottom: 2 },
+  main: { flex: 1, minWidth: 0 },
+  name: { fontWeight: '700', fontSize: 16, marginBottom: 2 },
+  title: { fontWeight: '600', fontSize: 15, color: colors.black, marginBottom: 2 },
+  place: { fontSize: 13, color: colors.textMuted, marginBottom: 2 },
   date: { fontSize: 12, color: colors.textMuted },
-  rating: { fontSize: 12, color: colors.accent, marginTop: 4 },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 6 },
-  tagChip: {
+  ratingCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  ratingText: { fontSize: 14, fontWeight: '700', color: colors.white },
+  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  badgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    backgroundColor: 'rgba(201, 162, 39, 0.15)',
+    borderWidth: 1,
+    borderColor: '#C9A227',
+    marginRight: 6,
+    marginBottom: 4,
+  },
+  badgeIcon: { marginRight: 4 },
+  badgeText: { fontSize: 11, fontWeight: '600', color: colors.black },
+  activityImage: {
+    width: '100%',
+    height: ACTIVITY_IMAGE_HEIGHT,
+    borderRadius: 12,
+    marginTop: 12,
     backgroundColor: colors.border,
   },
-  tagText: { fontSize: 11, color: colors.textMuted },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -138,6 +191,21 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionText: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginLeft: 4,
+  },
+  addFriendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
   },
   addFriendBtn: {
     flexDirection: 'row',

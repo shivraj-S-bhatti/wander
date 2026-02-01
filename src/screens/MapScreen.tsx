@@ -105,18 +105,16 @@ export function MapScreen() {
               mapType="standard"
               onMapReady={() => setMapReady(true)}
             >
-              {mapReady && (
-                <Marker
-                  key="home"
-                  identifier="home"
-                  coordinate={{ latitude: city.origin.lat, longitude: city.origin.lng }}
-                  title="You"
-                  description="Home"
-                  pinColor={HOME_MARKER_COLOR}
-                  tracksViewChanges={false}
-                />
-              )}
-              {mapReady && city.places.map((place) => (
+              <Marker
+                key="home"
+                identifier="home"
+                coordinate={{ latitude: city.origin.lat, longitude: city.origin.lng }}
+                title="You"
+                description="Home"
+                pinColor={HOME_MARKER_COLOR}
+                tracksViewChanges={false}
+              />
+              {city.places.map((place) => (
                 <Marker
                   key={place.id}
                   identifier={place.id}
@@ -128,7 +126,7 @@ export function MapScreen() {
                   onPress={() => setRouteDestination({ lat: place.lat, lng: place.lng })}
                 />
               ))}
-              {mapReady && city.events.map((ev) => (
+              {city.events.map((ev) => (
                 <Marker
                   key={ev.id}
                   identifier={ev.id}

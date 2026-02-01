@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
