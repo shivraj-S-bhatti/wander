@@ -32,7 +32,19 @@ export function LeaderboardCard({ entry, isFriend, onAddFriend }: Props) {
         )}
       </View>
       <View style={styles.content}>
-        <Text style={styles.username}>{entry.username}</Text>
+        <View style={styles.usernameRow}>
+          <Text style={styles.username}>{entry.username}</Text>
+          {showAddFriend && (
+            <TouchableOpacity
+              style={styles.addFriendIconBtn}
+              onPress={() => onAddFriend(entry.id)}
+              accessibilityLabel="Add friend"
+              accessibilityRole="button"
+            >
+              <Ionicons name="person-add-outline" size={20} color={colors.accent} />
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={styles.stats}>
           {entry.civicScore} pts · {entry.streak} day streak
         </Text>
@@ -48,23 +60,6 @@ export function LeaderboardCard({ entry, isFriend, onAddFriend }: Props) {
         )}
         <Text style={styles.rank}>#{entry.rank}</Text>
       </View>
-      {showAddFriend && (
-        <TouchableOpacity
-          style={styles.addFriendBtn}
-          onPress={() => onAddFriend(entry.id)}
-          accessibilityLabel="Add friend"
-          accessibilityRole="button"
-        >
-          <Ionicons name="person-add-outline" size={20} color={colors.accent} />
-          <Text style={styles.addFriendText}>Add friend</Text>
-        </TouchableOpacity>
-      )}
-      {isFriend && (
-        <View style={styles.friendsLabel}>
-          <Ionicons name="checkmark-circle" size={20} color={colors.textMuted} />
-          <Text style={styles.friendsText}>Friends</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -108,11 +103,19 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   username: {
     fontSize: 16,
     fontWeight: '700',
     color: colors.black,
-    marginBottom: 4,
+  },
+  addFriendIconBtn: {
+    padding: 4,
   },
   stats: {
     fontSize: 13,
@@ -125,23 +128,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.accent,
   },
-  addFriendBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginLeft: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  addFriendText: { fontSize: 13, fontWeight: '600', color: colors.accent },
-  friendsLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginLeft: 12,
-  },
-  friendsText: { fontSize: 13, color: colors.textMuted },
 });

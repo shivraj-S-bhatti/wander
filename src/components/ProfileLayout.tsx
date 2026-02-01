@@ -23,6 +23,8 @@ import type { RootState } from '../state/reduxStore';
 import { PlaceCard } from './PlaceCard';
 import { colors } from '../theme';
 import { getFaceSource } from '../utils/avatarFaces';
+
+const PROFILE_PHOTO = require('../assets/faces/jackson.jpg');
 import { ActivityHeatmap } from './ProfileFeed';
 
 type Props = {
@@ -153,7 +155,9 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
         </View>
       )}
       <View style={styles.profileSection}>
-        {(() => {
+        {isOwnProfile ? (
+          <Image source={PROFILE_PHOTO} style={styles.avatar} resizeMode="cover" />
+        ) : (() => {
           const faceSrc = getFaceSource(user.avatar);
           if (faceSrc != null && typeof faceSrc === 'number') {
             return <Image source={faceSrc} style={styles.avatar} resizeMode="cover" />;
