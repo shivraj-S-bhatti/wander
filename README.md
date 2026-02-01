@@ -18,6 +18,22 @@ So: **Strava for joymaxxing** = track and share life satisfaction, not just fitn
 
 ---
 
+## Development phases (31 Jan 5:00 PM – 1 Feb 3:15 AM)
+
+Single session building the recommendations and plan flows, then unifying the plan UX.
+
+| Phase | What we did |
+|-------|--------------|
+| **1. Recommendations** | Added `EXPO_PUBLIC_GEMINI_KEY` to config; store builds `friendSummary` from demo check-ins/places/users and exposes `refreshRecs`, `loadingRecs`, `recsError`, `lastGeminiRecs`. ProfileLayout: Preferences (vibe, budget chips) and Recommendations section with PlaceCard; tap rec → PlaceDetail. |
+| **2. Plan state & Gemini** | Store: `activePlan`, `openPlanModal`, actions; persist plan in storage. Gemini: `fetchItineraryOptions`, itinerary types. Explore: “Plan my day” FAB, Beli-style modal (location, vibe, budget, hours), Generate → fetch options. |
+| **3. Nav & Itinerary screen** | Restored MakePost as center tab; removed Plan tab. Itinerary as stack screen (“Your plan”). Plan indicator: navigate icon in header (between Wander and List\|Map); inactive = grey, active = orange + pulse. ItineraryScreen: steps list + End plan; no map widget. |
+| **4. Plan modal: confirm/reject** | After Generate, show options in same modal. List with circle + name + X to cross out; single Accept (first non–crossed-out option becomes active plan); Try again / Cancel. Fallback options if API fails; hardened Gemini parsing (envelope + direct `{ options }`). |
+| **5. Web fixes** | MapScreen.web: modal body branched on `generatedOptions` (results step); `centerElement={planHeaderButton}` on AppHeader so plan indicator shows on web. |
+| **6. Unified modal** | One modal, three modes: **form** (Plan your day), **results** (cross-out + Accept), **viewPlan** (Your plan steps + End plan). FAB opens form; header with active plan opens viewPlan; same popup, content switches by mode. |
+| **7. Polish** | Icon-only pulse: removed glow box; arrow icon fades bright/dim (opacity). Hide “Plan my day” FAB when there is an active plan. |
+
+---
+
 ## Tech stack
 
 | Layer | Choices |
