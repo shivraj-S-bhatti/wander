@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { StoreProvider } from './src/state/store';
-import { FeedScreen } from './src/screens/FeedScreen';
+import { MakePostScreen } from './src/screens/MakePostScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { CommunityScreen } from './src/screens/CommunityScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
@@ -22,13 +22,15 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#6366f1',
+        tabBarActiveTintColor: '#b45309',
         tabBarInactiveTintColor: '#999',
         headerShown: false,
+        tabBarStyle: { height: 64, paddingBottom: 8, paddingTop: 8 },
+        tabBarLabelStyle: { fontSize: 14, fontWeight: '600' },
       }}
     >
-      <Tab.Screen name="Feed" component={FeedScreen} options={{ tabBarLabel: 'Feed' }} />
-      <Tab.Screen name="Map" component={MapScreen} options={{ tabBarLabel: 'Map' }} />
+      <Tab.Screen name="Explore" component={MapScreen} options={{ tabBarLabel: 'Explore' }} />
+      <Tab.Screen name="MakePost" component={MakePostScreen} options={{ tabBarLabel: 'Make a post' }} />
       <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: 'Community' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>

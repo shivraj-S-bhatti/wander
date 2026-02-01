@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12, color: '#666', marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   points: { fontSize: 12, color: '#059669', fontWeight: '600' },
-  btn: { backgroundColor: '#1a1a2e', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  btnText: { color: '#fff', fontWeight: '600' },
+  btn: { backgroundColor: '#facc15', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  btnText: { color: '#1a1a2e', fontWeight: '600' },
   joined: { fontSize: 12, color: '#059669', fontWeight: '600' },
 });

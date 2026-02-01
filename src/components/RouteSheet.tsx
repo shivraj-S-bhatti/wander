@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { getDirections, type DirectionsResult } from '../services/directions';
 
-import { GOOGLE_MAPS_API_KEY } from '../config';
-
-const DIRECTIONS_API_KEY = GOOGLE_MAPS_API_KEY;
+import { GOOGLE_DIRECTIONS_API_KEY } from '../config';
 
 type Props = {
   origin: { lat: number; lng: number };
@@ -18,7 +16,7 @@ export function RouteSheet({ origin, destination, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const key = DIRECTIONS_API_KEY || 'no-key';
+    const key = GOOGLE_DIRECTIONS_API_KEY || 'no-key';
     getDirections(origin, destination, key)
       .then(setResult)
       .catch(() => setError('Could not load routes'))

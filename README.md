@@ -14,9 +14,14 @@ npm install
 
 1. Copy env template: `cp .env.example .env`
 2. Add your keys to `.env` (from [Google Cloud Console](https://console.cloud.google.com/)):
-   - `EXPO_PUBLIC_GOOGLE_MAPS_KEY` — enable **Maps JavaScript API** (web map) and **Directions API** (route/cost)
+   - `EXPO_PUBLIC_GOOGLE_MAPS_KEY` — enable **Maps JavaScript API** (web map)
+   - `EXPO_PUBLIC_GOOGLE_DIRECTIONS_KEY` — enable **Directions API** (route/cost)
    - `EXPO_PUBLIC_GEMINI_KEY` — enable **Generative Language API** (recommendations)
-3. Never commit `.env` (it’s in `.gitignore`).
+3. **Web only:** The browser blocks Directions and Gemini (CORS). Run the proxy, then set `EXPO_PUBLIC_PROXY_BASE=http://localhost:3001` in `.env` and restart Expo:
+   ```bash
+   node scripts/proxy-server.mjs
+   ```
+4. Never commit `.env` (it’s in `.gitignore`).
 
 ## Run
 
@@ -28,10 +33,14 @@ npx expo start --web
 npx expo start --ios
 ```
 
+**Run on iOS:** Use the same `.env` (no need for `EXPO_PUBLIC_PROXY_BASE` on iOS). Directions (“Get there”) and Gemini (“Tonight’s recommendations”) work directly — no proxy. For Google Map tiles on device (instead of Apple Maps in Expo Go), use a development build and keep `EXPO_PUBLIC_GOOGLE_MAPS_KEY` set.
+
 - **Feed** — Friend check-ins → tap for place detail.
 - **Map** — Map (web: Google Maps JS; native: react-native-maps). Tap marker → place detail; “Get there” → route + cost.
 - **Community** — Volunteer events; Join → civic points.
 - **Profile** — Points, badges, prefs, “Tonight’s recommendations” (Gemini or fallback).
+
+**Test API keys:** `node scripts/test-apis.mjs` (reads `.env`, pings Directions, Maps/Geocoding, Gemini).
 
 ## Tech
 

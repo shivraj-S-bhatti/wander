@@ -40,9 +40,24 @@ export type Event = {
   joinedUserIds: string[];
 };
 
+export type Post = {
+  id: string;
+  userId: string;
+  ts: number;
+  what: string;
+  whoWith: string;
+  rating: number;
+  experience: string;
+  imageUris: string[];
+  tags: string[];
+};
+
 const now = Date.now();
 const hour = 60 * 60 * 1000;
 const day = 24 * hour;
+
+export const DEMO_ORIGIN = { lat: 37.7812, lng: -122.4112 };
+export const DEMO_MAP_CENTER = { lat: 37.7849, lng: -122.4094 };
 
 export const DEMO_USERS: User[] = [
   { id: 'u_me', name: 'You', avatar: undefined },

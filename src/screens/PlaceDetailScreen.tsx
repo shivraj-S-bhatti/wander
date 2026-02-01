@@ -2,13 +2,11 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { RouteSheet } from '../components/RouteSheet';
-import { DEMO_PLACES, DEMO_REVIEWS } from '../data/demo';
+import { DEMO_ORIGIN, DEMO_PLACES, DEMO_REVIEWS } from '../data/demo';
 import { useStore } from '../state/store';
 import { formatRelative } from '../utils/time';
 
 type StackParamList = { PlaceDetail: { placeId: string } };
-
-const MY_LOCATION = { lat: 37.7812, lng: -122.4112 };
 
 export function PlaceDetailScreen() {
   const route = useRoute<RouteProp<StackParamList, 'PlaceDetail'>>();
@@ -45,7 +43,7 @@ export function PlaceDetailScreen() {
       {showRoute && (
         <View style={styles.sheet}>
           <RouteSheet
-            origin={MY_LOCATION}
+            origin={DEMO_ORIGIN}
             destination={{ lat: place.lat, lng: place.lng }}
             onClose={() => setShowRoute(false)}
           />

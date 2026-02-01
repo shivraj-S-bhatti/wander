@@ -1,4 +1,5 @@
-// Gemini API — call from app (demo) or via proxy in production
+// Gemini API — call from app (demo) or via proxy on web to avoid CORS
+import { PROXY_BASE } from '../config';
 
 export type MemorySummary = {
   categoryCounts: Record<string, number>;
@@ -19,7 +20,7 @@ export type GeminiRecsResponse = {
   recs: GeminiRecItem[];
 };
 
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 function buildPrompt(memory: MemorySummary, friendSummary: string, placesSummary: string): string {
   return `You are a local recommendations assistant. Given the user's preferences and recent friend activity, suggest up to 3 places for tonight.
@@ -49,15 +50,17 @@ export async function fetchRecommendations(
   placesSummary: string
 ): Promise<GeminiRecsResponse> {
   const prompt = buildPrompt(memory, friendSummary, placesSummary);
-  const url = `${GEMINI_BASE}?key=${apiKey}`;
   const body = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: 0.3,
       maxOutputTokens: 1024,
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
     },
   };
+
+  const url = PROXY_BASE ? `${PROXY_BASE}/gemini` : `${GEMINI_BASE}?key=${apiKey}`;
 
   try {
     const res = await fetch(url, {
@@ -70,7 +73,6 @@ export async function fetchRecommendations(
     const text =
       data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
     if (!text) throw new Error('Empty Gemini response');
-    // Strip markdown code block if present
     const cleaned = text.replace(/^```json?\s*|\s*```$/g, '').trim();
     return JSON.parse(cleaned) as GeminiRecsResponse;
   } catch (e) {

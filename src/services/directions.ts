@@ -1,5 +1,6 @@
 import { haversineMeters } from '../utils/geo';
 import { rideshareCostMeters, TRANSIT_FIXED_COST } from '../utils/pricing';
+import { PROXY_BASE } from '../config';
 
 const GOOGLE_DIRECTIONS_BASE = 'https://maps.googleapis.com/maps/api/directions/json';
 
@@ -31,38 +32,54 @@ export async function getDirections(
   destination: { lat: number; lng: number },
   apiKey: string
 ): Promise<DirectionsResult> {
-  const hasKey = !!apiKey && apiKey !== 'no-key' && !apiKey.startsWith('YOUR_');
   const originStr = `${origin.lat},${origin.lng}`;
   const destStr = `${destination.lat},${destination.lng}`;
-
   let driving: RouteLeg | undefined;
   let transit: RouteLeg | undefined;
 
-  if (hasKey) try {
+  // Use proxy on web to avoid CORS (proxy has the key)
+  if (PROXY_BASE) {
+    try {
+      const res = await fetch(
+        `${PROXY_BASE}/directions?origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destStr)}`
+      );
+      if (!res.ok) throw new Error(`Proxy ${res.status}`);
+      const { driving: drivingJson, transit: transitJson } = await res.json();
+      if (drivingJson?.status === 'OK' && drivingJson.routes?.[0]?.legs?.[0]) {
+        const leg = parseLegFromResponse(drivingJson.routes[0].legs[0]);
+        if (leg) driving = { ...leg, costRideshare: rideshareCostMeters(leg.distanceMeters), costTransit: undefined };
+      }
+      if (transitJson?.status === 'OK' && transitJson.routes?.[0]?.legs?.[0]) {
+        const leg = parseLegFromResponse(transitJson.routes[0].legs[0]);
+        if (leg) transit = { ...leg, costTransit: TRANSIT_FIXED_COST, costRideshare: undefined };
+      }
+    } catch (_) {
+      // fall through to direct or haversine
+    }
+  }
+
+  const hasKey = !!apiKey && apiKey !== 'no-key' && !apiKey.startsWith('YOUR_');
+  if (!driving && hasKey) try {
     const drivingRes = await fetch(
       `${GOOGLE_DIRECTIONS_BASE}?origin=${originStr}&destination=${destStr}&mode=driving&key=${apiKey}`
     );
     const drivingJson = await drivingRes.json();
     if (drivingJson.status === 'OK' && drivingJson.routes?.[0]?.legs?.[0]) {
       const leg = parseLegFromResponse(drivingJson.routes[0].legs[0]);
-      if (leg) {
-        driving = { ...leg, costRideshare: rideshareCostMeters(leg.distanceMeters), costTransit: undefined };
-      }
+      if (leg) driving = { ...leg, costRideshare: rideshareCostMeters(leg.distanceMeters), costTransit: undefined };
     }
   } catch (_) {
     // ignore
   }
 
-  if (hasKey) try {
+  if (!transit && hasKey) try {
     const transitRes = await fetch(
       `${GOOGLE_DIRECTIONS_BASE}?origin=${originStr}&destination=${destStr}&mode=transit&key=${apiKey}`
     );
     const transitJson = await transitRes.json();
     if (transitJson.status === 'OK' && transitJson.routes?.[0]?.legs?.[0]) {
       const leg = parseLegFromResponse(transitJson.routes[0].legs[0]);
-      if (leg) {
-        transit = { ...leg, costTransit: TRANSIT_FIXED_COST, costRideshare: undefined };
-      }
+      if (leg) transit = { ...leg, costTransit: TRANSIT_FIXED_COST, costRideshare: undefined };
     }
   } catch (_) {
     // ignore

@@ -6,19 +6,23 @@ import {
   DEMO_RECS,
   type Event,
   type Place,
+  type Post,
 } from '../data/demo';
 import { fetchRecommendations, type GeminiRecItem, type MemorySummary } from '../services/gemini';
-import { loadProfile, saveProfile, type StoredProfile } from '../services/storage';
+import { loadProfile, loadPosts, saveProfile, savePosts, type StoredProfile, type StoredPost } from '../services/storage';
 
 // ——— Civic points rules (hardcoded)
 const POINTS_JOIN_EVENT = (e: Event) => e.pointsReward;
 const POINTS_CHECKIN_LOCAL = 5;
 const POINTS_REVIEW = 3;
+const POINTS_POST = 5;
+const POINTS_PER_LEVEL = 25;
 const BADGES = [
   { threshold: 50, label: 'Local Supporter' },
   { threshold: 100, label: 'Cleanup Crew' },
   { threshold: 200, label: 'Community Builder' },
 ];
+export { POINTS_POST };
 
 export type ProfilePrefs = {
   vibe?: 'chill' | 'party' | 'quiet' | 'outdoors';
@@ -53,10 +57,13 @@ const defaultProfile: ProfileState = {
 type AppState = {
   profile: ProfileState;
   events: Event[];
+  posts: Post[];
 };
 
 type Action =
   | { type: 'LOAD_PROFILE'; payload: StoredProfile | null }
+  | { type: 'LOAD_POSTS'; payload: StoredPost[] }
+  | { type: 'ADD_POST'; payload: Post }
   | { type: 'MERGE_JOINED_INTO_EVENTS'; joinedEventIds: string[] }
   | { type: 'JOIN_EVENT'; eventId: string }
   | { type: 'SET_PREFS'; prefs: Partial<ProfilePrefs> }
@@ -122,6 +129,8 @@ function profileReducer(state: ProfileState, action: Action): ProfileState {
       };
     case 'SET_LOADING_RECS':
       return { ...state, loadingRecs: action.loading, recsError: null };
+    case 'ADD_POST':
+      return { ...state, civicPoints: state.civicPoints + POINTS_POST };
     default:
       return state;
   }
@@ -150,12 +159,32 @@ function eventsReducer(state: Event[], action: Action): Event[] {
 const initialState: AppState = {
   profile: defaultProfile,
   events: DEMO_EVENTS.map((e) => ({ ...e, joinedUserIds: [...e.joinedUserIds] })),
+  posts: [],
 };
+
+function postsReducer(state: Post[], action: Action): Post[] {
+  if (action.type === 'LOAD_POSTS') {
+    return action.payload.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      ts: p.ts,
+      what: p.what,
+      whoWith: p.whoWith,
+      rating: p.rating,
+      experience: p.experience,
+      imageUris: p.imageUris ?? [],
+      tags: p.tags ?? [],
+    }));
+  }
+  if (action.type === 'ADD_POST') return [action.payload, ...state];
+  return state;
+}
 
 function rootReducer(state: AppState, action: Action): AppState {
   return {
     profile: profileReducer(state.profile, action),
     events: eventsReducer(state.events, action),
+    posts: postsReducer(state.posts, action),
   };
 }
 
@@ -165,8 +194,12 @@ type StoreContextValue = {
   joinEvent: (eventId: string) => void;
   setPrefs: (prefs: Partial<ProfilePrefs>) => void;
   choosePlace: (place: Place) => void;
+  addPost: (post: Omit<Post, 'id' | 'userId' | 'ts'>, ts?: number) => void;
   refreshRecs: (geminiKey?: string) => Promise<void>;
   getBadges: () => { label: string; unlocked: boolean }[];
+  getLevel: () => number;
+  getStreak: () => number;
+  getNextBadgeProgress: () => { label: string; pointsToNext: number; current: number; threshold: number } | null;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -179,6 +212,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'LOAD_PROFILE', payload: p });
       if (p?.joinedEventIds?.length) dispatch({ type: 'MERGE_JOINED_INTO_EVENTS', joinedEventIds: p.joinedEventIds });
     });
+    loadPosts().then((list) => dispatch({ type: 'LOAD_POSTS', payload: list }));
   }, []);
 
   useEffect(() => {
@@ -194,6 +228,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveProfile(profile);
   }, [state.profile]);
 
+  useEffect(() => {
+    const toStore: StoredPost[] = state.posts.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      ts: p.ts,
+      what: p.what,
+      whoWith: p.whoWith,
+      rating: p.rating,
+      experience: p.experience,
+      imageUris: p.imageUris ?? [],
+      tags: p.tags ?? [],
+    }));
+    if (toStore.length > 0) savePosts(toStore);
+  }, [state.posts]);
+
   const joinEvent = useCallback((eventId: string) => {
     dispatch({ type: 'JOIN_EVENT', eventId });
   }, []);
@@ -204,6 +253,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const choosePlace = useCallback((place: Place) => {
     dispatch({ type: 'CHOOSE_PLACE', placeId: place.id, category: place.category, tags: place.tags });
+  }, []);
+
+  const addPost = useCallback((post: Omit<Post, 'id' | 'userId' | 'ts'>, ts?: number) => {
+    const full: Post = {
+      ...post,
+      id: `post_${Date.now()}`,
+      userId: CURRENT_USER_ID,
+      ts: ts ?? Date.now(),
+    };
+    dispatch({ type: 'ADD_POST', payload: full });
   }, []);
 
   const refreshRecs = useCallback(async (geminiKey?: string) => {
@@ -235,14 +294,58 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return BADGES.map((b) => ({ label: b.label, unlocked: pts >= b.threshold }));
   }, [state.profile.civicPoints]);
 
+  const getLevel = useCallback(() => {
+    const pts = state.profile.civicPoints;
+    return Math.floor(pts / POINTS_PER_LEVEL) + 1;
+  }, [state.profile.civicPoints]);
+
+  const getStreak = useCallback(() => {
+    const posts = state.posts.filter((p) => p.userId === CURRENT_USER_ID);
+    if (posts.length === 0) return 0;
+    const dayMs = 24 * 60 * 60 * 1000;
+    const startOfDay = (ts: number) => {
+      const d = new Date(ts);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    };
+    const sortedDays = [...new Set(posts.map((p) => startOfDay(p.ts)))].sort((a, b) => b - a);
+    let streak = 0;
+    const today = startOfDay(Date.now());
+    for (let i = 0; i < sortedDays.length; i++) {
+      const expected = today - i * dayMs;
+      if (sortedDays[i] === expected) streak++;
+      else break;
+    }
+    return streak;
+  }, [state.posts]);
+
+  const getNextBadgeProgress = useCallback(() => {
+    const pts = state.profile.civicPoints;
+    const next = BADGES.find((b) => pts < b.threshold);
+    if (!next) return null;
+    const prev = BADGES.filter((b) => b.threshold < next.threshold).pop();
+    const current = prev ? pts - prev.threshold : pts;
+    const threshold = prev ? next.threshold - prev.threshold : next.threshold;
+    return {
+      label: next.label,
+      pointsToNext: next.threshold - pts,
+      current: Math.min(pts - (prev?.threshold ?? 0), threshold),
+      threshold,
+    };
+  }, [state.profile.civicPoints]);
+
   const value: StoreContextValue = {
     state,
     dispatch,
     joinEvent,
     setPrefs,
     choosePlace,
+    addPost,
     refreshRecs,
     getBadges,
+    getLevel,
+    getStreak,
+    getNextBadgeProgress,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
