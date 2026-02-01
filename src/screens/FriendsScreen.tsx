@@ -16,7 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { FriendCard } from '../components/FriendCard';
-import { PlanHeaderButton } from '../components/PlanHeaderButton';
 import { DEMO_FRIENDS, DEMO_USERS } from '../data/demo';
 import type { Friend } from '../data/demo';
 import * as friendRequestsApi from '../services/friendRequests';
@@ -56,10 +55,8 @@ function toFriendWithDemo(u: ApiUser): Friend {
 
 export function FriendsScreen() {
   const navigation = useNavigation<FriendsNavProp>();
-  const { state, setOpenPlanModal } = useStore();
+  const { state } = useStore();
   const token = useSelector((s: RootState) => s.auth.token);
-  const hasActivePlan = state.plan.activePlan != null;
-  const onPlanHeaderPress = useCallback(() => setOpenPlanModal(true), [setOpenPlanModal]);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [requests, setRequests] = useState<FriendRequestReceived[]>([]);
@@ -214,7 +211,6 @@ export function FriendsScreen() {
   return (
     <View style={styles.container}>
       <AppHeader
-        centerElement={<PlanHeaderButton hasActivePlan={hasActivePlan} onPress={onPlanHeaderPress} />}
         rightElement={
           <TouchableOpacity
             onPress={openDropdown}

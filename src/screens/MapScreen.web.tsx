@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppHeader } from '../components/AppHeader';
-import { PlanHeaderButton } from '../components/PlanHeaderButton';
 import { PlaceCard } from '../components/PlaceCard';
 import { getCityById } from '../data/cities';
 import { GOOGLE_MAPS_API_KEY } from '../config';
@@ -64,12 +63,6 @@ export function MapScreen() {
           p.tags.some((t) => t.toLowerCase().includes(listSearch.trim().toLowerCase()))
       )
     : city.places;
-
-  const onPlanHeaderPress = () => setOpenPlanModal(true);
-
-  const planHeaderButton = (
-    <PlanHeaderButton hasActivePlan={hasActivePlan} onPress={onPlanHeaderPress} />
-  );
 
   useEffect(() => {
     if (viewMode !== 'map') {
@@ -214,7 +207,6 @@ export function MapScreen() {
         <AppHeader
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          centerElement={planHeaderButton}
           selectedCityId={selectedCityId}
           onCityChange={setSelectedCity}
         />
@@ -228,7 +220,6 @@ export function MapScreen() {
       <AppHeader
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        centerElement={planHeaderButton}
         selectedCityId={selectedCityId}
         onCityChange={setSelectedCity}
       />
@@ -262,10 +253,15 @@ export function MapScreen() {
               </View>
             )}
           </View>
-          {!hasActivePlan && (
+          {!hasActivePlan ? (
             <TouchableOpacity style={styles.fab} onPress={() => setOpenPlanModal(true)} accessibilityLabel="Plan my day" accessibilityRole="button">
               <Ionicons name="navigate" size={24} color={colors.white} />
               <Text style={styles.fabLabel}>Plan my day</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={[styles.fab, styles.fabActivePlan]} onPress={() => setOpenPlanModal(true)} accessibilityLabel="Active plan" accessibilityRole="button">
+              <Ionicons name="navigate" size={24} color={colors.white} />
+              <Text style={styles.fabLabel}>Active plan</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -328,4 +324,5 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   fabLabel: { fontSize: 16, fontWeight: '700', color: colors.white },
+  fabActivePlan: { backgroundColor: '#F97316' },
 });

@@ -12,7 +12,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import { AppHeader } from '../components/AppHeader';
-import { PlanHeaderButton } from '../components/PlanHeaderButton';
 import { PlaceCard } from '../components/PlaceCard';
 import { RouteSheet } from '../components/RouteSheet';
 import { getCityById } from '../data/cities';
@@ -57,18 +56,11 @@ export function MapScreen() {
       )
     : city.places;
 
-  const onPlanHeaderPress = () => setOpenPlanModal(true);
-
-  const planHeaderButton = (
-    <PlanHeaderButton hasActivePlan={hasActivePlan} onPress={onPlanHeaderPress} />
-  );
-
   return (
     <View style={styles.container}>
       <AppHeader
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        centerElement={planHeaderButton}
         selectedCityId={selectedCityId}
         onCityChange={setSelectedCity}
       />
@@ -138,10 +130,15 @@ export function MapScreen() {
               ))}
             </MapView>
           </View>
-          {!hasActivePlan && (
+          {!hasActivePlan ? (
             <TouchableOpacity style={styles.fab} onPress={() => setOpenPlanModal(true)} accessibilityLabel="Plan my day" accessibilityRole="button">
               <Ionicons name="navigate" size={24} color={colors.white} />
               <Text style={styles.fabLabel}>Plan my day</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={[styles.fab, styles.fabActivePlan]} onPress={() => setOpenPlanModal(true)} accessibilityLabel="Active plan" accessibilityRole="button">
+              <Ionicons name="navigate" size={24} color={colors.white} />
+              <Text style={styles.fabLabel}>Active plan</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -196,6 +193,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   fabLabel: { fontSize: 16, fontWeight: '700', color: colors.white },
+  fabActivePlan: { backgroundColor: '#F97316' },
   sheetWrap: {
     position: 'absolute',
     left: 0,

@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppHeader } from '../components/AppHeader';
-import { PlanHeaderButton } from '../components/PlanHeaderButton';
 import { VolunteerCard } from '../components/VolunteerCard';
 import { CommunityFeedCard } from '../components/CommunityFeedCard';
 import { PostCard } from '../components/PostCard';
@@ -27,8 +26,6 @@ export function CommunityScreen() {
   const events = state.events;
   const demoFriendIds = state?.demoFriendIds ?? [];
   const [pointsToast, setPointsToast] = useState<number | null>(null);
-  const hasActivePlan = state.plan.activePlan != null;
-  const onPlanHeaderPress = useCallback(() => setOpenPlanModal(true), [setOpenPlanModal]);
   const handleJoin = useCallback(
     (eventId: string, pointsReward: number) => {
       joinEvent(eventId);
@@ -103,14 +100,10 @@ export function CommunityScreen() {
     );
   };
 
-  const planHeaderButton = (
-    <PlanHeaderButton hasActivePlan={hasActivePlan} onPress={onPlanHeaderPress} />
-  );
-
   const ListHeader = useMemo(
     () => (
       <>
-        <AppHeader centerElement={planHeaderButton} />
+        <AppHeader />
         <Text style={styles.sectionTitle}>Volunteer!</Text>
         <ScrollView
           horizontal
@@ -130,7 +123,7 @@ export function CommunityScreen() {
         <Text style={styles.sectionTitle}>Your Feed</Text>
       </>
     ),
-    [events, hasActivePlan, planHeaderButton, handleJoin, handleVolunteerPress]
+    [events, handleJoin, handleVolunteerPress]
   );
 
   return (

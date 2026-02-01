@@ -15,7 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
-import { PlanHeaderButton } from '../components/PlanHeaderButton';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { DEMO_USERS } from '../data/demo';
 import * as usersApi from '../services/users';
@@ -40,10 +39,8 @@ function startOfDay(ts: number): number {
 type SelectedFriend = { id: string; username: string };
 
 export function MakePostScreen() {
-  const { addPost, state, setOpenPlanModal } = useStore();
+  const { addPost, state } = useStore();
   const token = useSelector((s: RootState) => s.auth.token);
-  const hasActivePlan = state.plan.activePlan != null;
-  const onPlanHeaderPress = useCallback(() => setOpenPlanModal(true), [setOpenPlanModal]);
   const [what, setWhat] = useState('');
   const [whoWith, setWhoWith] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<SelectedFriend[]>([]);
@@ -390,7 +387,7 @@ export function MakePostScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader centerElement={<PlanHeaderButton hasActivePlan={hasActivePlan} onPress={onPlanHeaderPress} />} />
+      <AppHeader />
       {isWide ? (
         <View style={styles.wideRow}>
           <ScrollView style={styles.formScroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
