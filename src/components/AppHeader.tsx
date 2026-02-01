@@ -1,8 +1,8 @@
-import { useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, StyleSheet, TextInput, View } from 'react-native';
+import { colors } from '../theme';
 
-type TabName = 'MakePost' | 'Explore' | 'Community' | 'Profile';
+const logoSource = require('../assets/wander-high-resolution-logo-transparent.png');
 
 type Props = {
   showCityInput?: boolean;
@@ -10,40 +10,20 @@ type Props = {
   onCityChange?: (city: string) => void;
 };
 
-const NAV: { label: string; tab: TabName }[] = [
-  { label: 'make a post', tab: 'MakePost' },
-  { label: 'explore', tab: 'Explore' },
-  { label: 'community', tab: 'Community' },
-  { label: 'profile', tab: 'Profile' },
-];
-
 export function AppHeader({ showCityInput, city = 'Boston', onCityChange }: Props) {
-  const navigation = useNavigation();
-
-  const jumpTo = (tab: TabName) => {
-    (navigation as any).navigate(tab);
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Text style={styles.title}>Wander</Text>
+        <Image source={logoSource} style={styles.logo} resizeMode="contain" accessibilityLabel="Wander" />
         {showCityInput ? (
           <TextInput
             style={styles.cityInput}
             value={city}
             onChangeText={onCityChange}
             placeholder="City"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.placeholder}
           />
         ) : null}
-        <View style={styles.nav}>
-          {NAV.map(({ label, tab }) => (
-            <Text key={tab} style={styles.navLink} onPress={() => jumpTo(tab)}>
-              {label}
-            </Text>
-          ))}
-        </View>
       </View>
     </View>
   );
@@ -54,18 +34,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.border,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
+  logo: {
+    height: 32,
+    width: 120,
     marginRight: 16,
   },
   cityInput: {
@@ -74,16 +54,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: colors.black,
     marginRight: 16,
-  },
-  nav: {
-    flexDirection: 'row',
-    gap: 12,
-    marginLeft: 'auto',
-  },
-  navLink: {
-    fontSize: 14,
-    color: '#333',
   },
 });

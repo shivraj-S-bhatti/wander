@@ -12,6 +12,7 @@ import {
 import { AppHeader } from '../components/AppHeader';
 import { DEMO_EVENTS, DEMO_MAP_CENTER, DEMO_PLACES } from '../data/demo';
 import { GOOGLE_MAPS_API_KEY } from '../config';
+import { colors } from '../theme';
 
 const FEELING_OPTIONS = ['chill', 'party', 'quiet', 'outdoors'] as const;
 const BUDGET_OPTIONS = ['low', 'med', 'high'] as const;
@@ -94,7 +95,7 @@ export function MapScreen() {
           position: { lat: ev.lat, lng: ev.lng },
           map,
           title: ev.title,
-          label: { text: '●', color: '#22c55e' },
+          label: { text: '●', color: colors.accent },
         });
         markersRef.current.push(marker);
       });
@@ -152,7 +153,7 @@ export function MapScreen() {
               value={startLocation}
               onChangeText={setStartLocation}
               placeholder="e.g. Home"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.placeholder}
             />
             <Text style={styles.panelLabel}>I'm feeling...</Text>
             <View style={styles.chipRow}>
@@ -196,7 +197,7 @@ export function MapScreen() {
       </View>
       {phase === 'loading' && (
         <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#facc15" />
+          <ActivityIndicator size="large" color={colors.accent} />
           <Text style={styles.overlayText}>Finding ideas…</Text>
         </View>
       )}
@@ -215,7 +216,7 @@ export function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, minHeight: '100%', backgroundColor: '#f5f5f5' },
+  container: { flex: 1, minHeight: '100%', backgroundColor: colors.background },
   main: { flex: 1, flexDirection: 'row' },
   mapWrap: { flex: 1, minWidth: 300, position: 'relative' },
   mapDiv: {
@@ -233,21 +234,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: { fontSize: 16, color: '#666' },
-  error: { padding: 16, color: '#dc2626', fontSize: 16 },
+  loadingText: { fontSize: 16, color: colors.textMuted },
+  error: { padding: 16, color: colors.accent, fontSize: 16 },
   panel: {
     width: 320,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderLeftWidth: 1,
-    borderLeftColor: '#eee',
+    borderLeftColor: colors.border,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
   panelScroll: { flex: 1 },
   panelContent: { paddingBottom: 24 },
-  panelLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 4 },
+  panelLabel: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 8, marginTop: 4 },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -255,48 +256,48 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#eee' },
-  chipActive: { backgroundColor: '#facc15' },
-  chipText: { fontSize: 14, color: '#333' },
-  chipTextActive: { fontSize: 14, color: '#1a1a2e', fontWeight: '600' },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.border },
+  chipActive: { backgroundColor: colors.accent },
+  chipText: { fontSize: 14, color: colors.black },
+  chipTextActive: { fontSize: 14, color: colors.white, fontWeight: '600' },
   sliderRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
-  sliderDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#e5e5e5' },
-  sliderDotActive: { backgroundColor: '#facc15' },
+  sliderDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.border },
+  sliderDotActive: { backgroundColor: colors.accent },
   generateBtn: {
-    backgroundColor: '#facc15',
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
   },
-  generateBtnText: { fontSize: 18, fontWeight: '700', color: '#1a1a2e' },
+  generateBtnText: { fontSize: 18, fontWeight: '700', color: colors.white },
   overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  overlayText: { color: '#fff', fontSize: 16, marginTop: 12 },
+  overlayText: { color: colors.white, fontSize: 16, marginTop: 12 },
   resultPanel: {
     position: 'absolute',
     left: 24,
     bottom: 24,
     right: 340,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
   resultTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  resultTime: { fontSize: 15, color: '#333', marginBottom: 4 },
-  resultWeather: { fontSize: 14, color: '#666', marginBottom: 16 },
+  resultTime: { fontSize: 15, color: colors.black, marginBottom: 4 },
+  resultWeather: { fontSize: 14, color: colors.textMuted, marginBottom: 16 },
   resultClose: { alignSelf: 'flex-end' },
-  resultCloseText: { color: '#6366f1', fontWeight: '600' },
+  resultCloseText: { color: colors.accent, fontWeight: '600' },
 });

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { RouteSheet } from '../components/RouteSheet';
 import { DEMO_ORIGIN, DEMO_PLACES, DEMO_REVIEWS } from '../data/demo';
 import { useStore } from '../state/store';
+import { colors } from '../theme';
 import { formatRelative } from '../utils/time';
 
 type StackParamList = { PlaceDetail: { placeId: string } };
@@ -66,20 +67,20 @@ export function PlaceDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.white },
   content: { padding: 16, paddingBottom: 48 },
   name: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
-  meta: { fontSize: 14, color: '#666', marginBottom: 4 },
-  price: { fontSize: 14, color: '#059669', marginBottom: 8 },
-  local: { fontSize: 12, color: '#6366f1', marginBottom: 16 },
-  btn: { backgroundColor: '#1a1a2e', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 24 },
-  btnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  meta: { fontSize: 14, color: colors.textMuted, marginBottom: 4 },
+  price: { fontSize: 14, color: colors.accent, marginBottom: 8 },
+  local: { fontSize: 12, color: colors.accent, marginBottom: 16 },
+  btn: { backgroundColor: colors.black, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 24 },
+  btnText: { color: colors.white, fontWeight: '600', fontSize: 16 },
   sheet: { marginBottom: 24 },
-  dismiss: { color: '#6366f1', textAlign: 'center', marginTop: 8, fontWeight: '600' },
+  dismiss: { color: colors.accent, textAlign: 'center', marginTop: 8, fontWeight: '600' },
   sectionTitle: { fontWeight: '700', fontSize: 18, marginBottom: 12 },
-  empty: { color: '#999', marginBottom: 16 },
-  review: { marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  reviewRating: { fontSize: 14, color: '#f59e0b', marginBottom: 4 },
-  reviewText: { fontSize: 14, color: '#333', marginBottom: 4 },
-  reviewTime: { fontSize: 11, color: '#999' },
+  empty: { color: colors.textMuted, marginBottom: 16 },
+  review: { marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  reviewRating: { fontSize: 14, color: colors.accent, marginBottom: 4 },
+  reviewText: { fontSize: 14, color: colors.black, marginBottom: 4 },
+  reviewTime: { fontSize: 11, color: colors.textMuted },
 });

@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { getDirections, type DirectionsResult } from '../services/directions';
 
 import { GOOGLE_DIRECTIONS_API_KEY } from '../config';
+import { colors } from '../theme';
 
 type Props = {
   origin: { lat: number; lng: number };
@@ -74,7 +75,7 @@ export function RouteSheet({ origin, destination, onClose }: Props) {
 
 const styles = StyleSheet.create({
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 20,
@@ -85,8 +86,8 @@ const styles = StyleSheet.create({
   title: { fontWeight: '700', fontSize: 18, marginBottom: 16 },
   row: { alignSelf: 'stretch', marginBottom: 12 },
   mode: { fontWeight: '600', fontSize: 15, marginBottom: 4 },
-  detail: { fontSize: 14, color: '#555' },
-  loadingText: { marginTop: 8, color: '#666' },
-  error: { color: '#dc2626' },
-  footnote: { fontSize: 11, color: '#999', marginTop: 12 },
+  detail: { fontSize: 14, color: colors.textMuted },
+  loadingText: { marginTop: 8, color: colors.textMuted },
+  error: { color: colors.accent },
+  footnote: { fontSize: 11, color: colors.textMuted, marginTop: 12 },
 });

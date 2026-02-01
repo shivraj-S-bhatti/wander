@@ -13,6 +13,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { AppHeader } from '../components/AppHeader';
 import { RouteSheet } from '../components/RouteSheet';
 import { DEMO_EVENTS, DEMO_MAP_CENTER, DEMO_ORIGIN, DEMO_PLACES } from '../data/demo';
+import { colors } from '../theme';
 
 const INITIAL_REGION = {
   latitude: DEMO_MAP_CENTER.lat,
@@ -82,7 +83,7 @@ export function MapScreen() {
               value={startLocation}
               onChangeText={setStartLocation}
               placeholder="e.g. Home"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.placeholder}
             />
             <Text style={styles.panelLabel}>I'm feeling...</Text>
             <View style={styles.chipRow}>
@@ -126,7 +127,7 @@ export function MapScreen() {
       </View>
       {phase === 'loading' && (
         <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#facc15" />
+          <ActivityIndicator size="large" color={colors.accent} />
           <Text style={styles.overlayText}>Finding ideas…</Text>
         </View>
       )}
@@ -155,11 +156,11 @@ export function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: colors.background },
   main: { flex: 1, flexDirection: 'column' },
   mapWrap: { flex: 1, minHeight: 200 },
   panel: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '45%',
@@ -168,9 +169,9 @@ const styles = StyleSheet.create({
   },
   panelScroll: { maxHeight: 280 },
   panelContent: { paddingBottom: 16 },
-  panelLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 4 },
+  panelLabel: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 8, marginTop: 4 },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -178,62 +179,62 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#eee' },
-  chipActive: { backgroundColor: '#facc15' },
-  chipText: { fontSize: 14, color: '#333' },
-  chipTextActive: { fontSize: 14, color: '#1a1a2e', fontWeight: '600' },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.border },
+  chipActive: { backgroundColor: colors.accent },
+  chipText: { fontSize: 14, color: colors.black },
+  chipTextActive: { fontSize: 14, color: colors.white, fontWeight: '600' },
   sliderRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
   sliderDot: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#e5e5e5',
+    backgroundColor: colors.border,
   },
-  sliderDotActive: { backgroundColor: '#facc15' },
+  sliderDotActive: { backgroundColor: colors.accent },
   generateBtn: {
-    backgroundColor: '#facc15',
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
   },
-  generateBtnText: { fontSize: 18, fontWeight: '700', color: '#1a1a2e' },
+  generateBtnText: { fontSize: 18, fontWeight: '700', color: colors.white },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  overlayText: { color: '#fff', fontSize: 16, marginTop: 12 },
+  overlayText: { color: colors.white, fontSize: 16, marginTop: 12 },
   resultPanel: {
     position: 'absolute',
     left: 16,
     right: 16,
     bottom: 100,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 8,
   },
   resultTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  resultTime: { fontSize: 15, color: '#333', marginBottom: 4 },
-  resultWeather: { fontSize: 14, color: '#666', marginBottom: 16 },
+  resultTime: { fontSize: 15, color: colors.black, marginBottom: 4 },
+  resultWeather: { fontSize: 14, color: colors.textMuted, marginBottom: 16 },
   resultClose: { alignSelf: 'flex-end' },
-  resultCloseText: { color: '#6366f1', fontWeight: '600' },
+  resultCloseText: { color: colors.accent, fontWeight: '600' },
   sheetWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 16,
     maxHeight: '40%',
   },
-  dismiss: { color: '#6366f1', textAlign: 'center', marginTop: 8, fontWeight: '600' },
+  dismiss: { color: colors.accent, textAlign: 'center', marginTop: 8, fontWeight: '600' },
 });

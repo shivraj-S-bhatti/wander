@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppHeader } from '../components/AppHeader';
 import { ProfileLayout } from '../components/ProfileLayout';
 import { CURRENT_USER_ID } from '../data/demo';
+import { colors } from '../theme';
 
 export function ProfileScreen() {
   return (
@@ -14,5 +15,5 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: colors.background },
 });

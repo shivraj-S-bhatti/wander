@@ -3,8 +3,9 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatDate } from '../utils/time';
 import { DEMO_CHECKINS, DEMO_PLACES, DEMO_USERS } from '../data/demo';
 import type { Post } from '../data/demo';
+import { colors } from '../theme';
 
-const HEATMAP_COLORS = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'] as const;
+const HEATMAP_COLORS = [colors.background, 'rgba(255,65,54,0.2)', 'rgba(255,65,54,0.4)', 'rgba(255,65,54,0.6)', colors.accent] as const;
 const WEEKS = 53;
 const ROWS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -191,37 +192,37 @@ export function useProfileFeed(posts: Post[], userId: string): FeedItem[] {
 }
 
 const feedStyles = StyleSheet.create({
-  heatmapWrap: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 16, borderRadius: 16, padding: 16 },
+  heatmapWrap: { backgroundColor: colors.white, marginHorizontal: 16, marginBottom: 16, borderRadius: 16, padding: 16 },
   heatmapTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  heatmapSubtitle: { fontSize: 12, color: '#666', marginBottom: 12 },
+  heatmapSubtitle: { fontSize: 12, color: colors.textMuted, marginBottom: 12 },
   heatmapScroll: { marginHorizontal: -4 },
   heatmapInner: { minWidth: WEEKS * (CELL_SIZE + GAP) - GAP },
   monthRow: { position: 'relative', height: 18, marginBottom: 4 },
-  monthLabelText: { fontSize: 12, color: '#24292f', fontWeight: '500' },
+  monthLabelText: { fontSize: 12, color: colors.black, fontWeight: '500' },
   heatmapGrid: {},
   heatmapRow: { flexDirection: 'row', gap: GAP, marginBottom: GAP },
   heatmapCell: { width: CELL_SIZE, height: CELL_SIZE, borderRadius: 2 },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 12 },
-  legendLess: { fontSize: 11, color: '#57606a', marginRight: 4 },
+  legendLess: { fontSize: 11, color: colors.textMuted, marginRight: 4 },
   legendCell: { width: 10, height: 10, borderRadius: 2 },
-  legendMore: { fontSize: 11, color: '#57606a', marginLeft: 4 },
+  legendMore: { fontSize: 11, color: colors.textMuted, marginLeft: 4 },
   activityCard: {
     flexDirection: 'row',
-    backgroundColor: '#fef9c3',
+    backgroundColor: colors.white,
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#fde047',
+    borderColor: colors.border,
   },
-  activityCardImage: { width: 80, height: 80, backgroundColor: '#e5e5e5' },
+  activityCardImage: { width: 80, height: 80, backgroundColor: colors.border },
   activityCardBody: { flex: 1, padding: 12 },
-  activityCardTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a2e', marginBottom: 2 },
-  activityCardWho: { fontSize: 13, color: '#666', marginBottom: 2 },
-  activityCardDate: { fontSize: 12, color: '#999', marginBottom: 4 },
-  activityCardRating: { fontSize: 14, color: '#b45309', marginBottom: 4 },
-  activityCardDesc: { fontSize: 14, color: '#333', marginBottom: 6 },
+  activityCardTitle: { fontSize: 16, fontWeight: '700', color: colors.black, marginBottom: 2 },
+  activityCardWho: { fontSize: 13, color: colors.textMuted, marginBottom: 2 },
+  activityCardDate: { fontSize: 12, color: colors.textMuted, marginBottom: 4 },
+  activityCardRating: { fontSize: 14, color: colors.accent, marginBottom: 4 },
+  activityCardDesc: { fontSize: 14, color: colors.black, marginBottom: 6 },
   activityCardTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  activityCardTag: { fontSize: 12, color: '#666', backgroundColor: '#fff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  activityCardTag: { fontSize: 12, color: colors.textMuted, backgroundColor: colors.white, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
 });

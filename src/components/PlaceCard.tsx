@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Place } from '../data/demo';
+import { colors } from '../theme';
 
 type Props = {
   place: Place;
@@ -20,17 +21,17 @@ export function PlaceCard({ place, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 14,
     marginVertical: 6,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   name: { fontWeight: '700', fontSize: 16, marginBottom: 4 },
-  meta: { fontSize: 12, color: '#666', marginBottom: 2 },
-  price: { fontSize: 12, color: '#059669' },
+  meta: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
+  price: { fontSize: 12, color: colors.accent },
 });
