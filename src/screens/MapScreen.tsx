@@ -40,6 +40,11 @@ export function MapScreen() {
   const glowAnim = useRef(new Animated.Value(0.4)).current;
   const hasActivePlan = state.plan.activePlan != null;
 
+  // #region agent log
+  useEffect(() => {
+    if (typeof fetch === 'function') fetch('http://127.0.0.1:7245/ingest/398bfe81-bbbf-4c15-873e-38cc5dbcd7b0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MapScreen.tsx:mount',message:'MapScreen mounted',data:{viewMode},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+  }, []);
+  // #endregion
   useEffect(() => {
     if (!hasActivePlan) return;
     const loop = Animated.loop(
@@ -63,6 +68,7 @@ export function MapScreen() {
   const [generating, setGenerating] = useState(false);
   const [generatedOptions, setGeneratedOptions] = useState<ItineraryOption[] | null>(null);
   const [crossedOutIndices, setCrossedOutIndices] = useState<Set<number>>(new Set());
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     if (state.plan.openPlanModal) {
@@ -224,23 +230,28 @@ export function MapScreen() {
               style={StyleSheet.absoluteFill}
               initialRegion={INITIAL_REGION}
               mapType="standard"
+              onMapReady={() => setMapReady(true)}
             >
-              {DEMO_PLACES.map((place) => (
+              {mapReady && DEMO_PLACES.map((place) => (
                 <Marker
                   key={place.id}
+                  identifier={place.id}
                   coordinate={{ latitude: place.lat, longitude: place.lng }}
                   title={place.name}
                   description={place.category}
+                  tracksViewChanges={false}
                   onCalloutPress={() => nav.navigate('PlaceDetail' as never, { placeId: place.id } as never)}
                   onPress={() => setRouteDestination({ lat: place.lat, lng: place.lng })}
                 />
               ))}
-              {DEMO_EVENTS.map((ev) => (
+              {mapReady && DEMO_EVENTS.map((ev) => (
                 <Marker
                   key={ev.id}
+                  identifier={ev.id}
                   coordinate={{ latitude: ev.lat, longitude: ev.lng }}
                   title={ev.title}
                   pinColor="green"
+                  tracksViewChanges={false}
                 />
               ))}
             </MapView>
@@ -303,6 +314,11 @@ export function MapScreen() {
                             <Text style={[styles.optionStops, crossedOut && styles.optionTextCrossedOut]} numberOfLines={1}>
                               {option.placeIds?.length ?? 0} stops{placeNames ? ` · ${placeNames}` : ''}
                             </Text>
+                            {option.priceBreakdown ? (
+                              <Text style={[styles.optionPrice, crossedOut && styles.optionTextCrossedOut]} numberOfLines={1}>
+                                {option.priceBreakdown}
+                              </Text>
+                            ) : null}
                           </View>
                         </View>
                         <TouchableOpacity
@@ -402,7 +418,7 @@ export function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.background, overflow: 'hidden' },
   listWrap: { flex: 1 },
   listSearchInput: {
     backgroundColor: colors.white,
@@ -417,8 +433,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   listContent: { padding: 16, paddingBottom: 24 },
-  main: { flex: 1, flexDirection: 'column' },
-  mapWrap: { flex: 1, minHeight: 200 },
+  main: { flex: 1, flexDirection: 'column', overflow: 'hidden' },
+  mapWrap: { flex: 1, minHeight: 200, overflow: 'hidden' },
   fab: {
     position: 'absolute',
     bottom: 24,
@@ -529,6 +545,7 @@ const styles = StyleSheet.create({
   optionRowText: { flex: 1, minWidth: 0 },
   optionName: { fontSize: 16, fontWeight: '700', color: colors.black, marginBottom: 2 },
   optionStops: { fontSize: 13, color: colors.textMuted },
+  optionPrice: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   optionTextCrossedOut: { textDecorationLine: 'line-through', color: colors.textMuted },
   optionCrossOut: { padding: 4 },
   acceptDisabled: { opacity: 0.5 },

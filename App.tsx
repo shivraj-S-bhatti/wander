@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
@@ -36,13 +37,18 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+  const tabBarPaddingBottom = insets.bottom + 8;
+  // #region agent log
+  if (typeof fetch === 'function') fetch('http://127.0.0.1:7245/ingest/398bfe81-bbbf-4c15-873e-38cc5dbcd7b0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:MainTabs',message:'tab bar insets',data:{bottom:insets.bottom,height:64+insets.bottom},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   return (
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
         headerShown: false,
-        tabBarStyle: { height: 64, paddingBottom: 8, paddingTop: 8 },
+        tabBarStyle: { height: 64 + insets.bottom, paddingBottom: tabBarPaddingBottom, paddingTop: 8 },
         tabBarLabelStyle: { fontSize: 14, fontWeight: '600' },
       }}
     >
@@ -92,9 +98,13 @@ function MainTabs() {
 
 function RootNavigator() {
   const token = useAppSelector((state) => state.auth.token);
+  const initialRoute = token ? 'MainTabs' : 'Login';
+  // #region agent log
+  if (typeof fetch === 'function') fetch('http://127.0.0.1:7245/ingest/398bfe81-bbbf-4c15-873e-38cc5dbcd7b0',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:RootNavigator',message:'initial route',data:{hasToken:!!token,initialRoute},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   return (
     <Stack.Navigator
-      initialRouteName={token ? 'MainTabs' : 'Login'}
+      initialRouteName={initialRoute}
       screenOptions={{ headerShown: true }}
     >
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
@@ -126,15 +136,17 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <AuthHydration>
-        <StoreProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
-          <StatusBar style="dark" />
-        </StoreProvider>
-      </AuthHydration>
-    </Provider>
+    <SafeAreaProvider>
+      <Provider store={store}>
+        <AuthHydration>
+          <StoreProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+            <StatusBar style="dark" />
+          </StoreProvider>
+        </AuthHydration>
+      </Provider>
+    </SafeAreaProvider>
   );
 }

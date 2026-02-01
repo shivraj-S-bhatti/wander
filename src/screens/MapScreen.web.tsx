@@ -386,6 +386,11 @@ export function MapScreen() {
                             <Text style={[styles.optionStops, crossedOut && styles.optionTextCrossedOut]} numberOfLines={1}>
                               {option.placeIds?.length ?? 0} stops{placeNames ? ` · ${placeNames}` : ''}
                             </Text>
+                            {option.priceBreakdown ? (
+                              <Text style={[styles.optionPrice, crossedOut && styles.optionTextCrossedOut]} numberOfLines={1}>
+                                {option.priceBreakdown}
+                              </Text>
+                            ) : null}
                           </View>
                         </View>
                         <TouchableOpacity
@@ -615,6 +620,7 @@ const styles = StyleSheet.create({
   optionRowText: { flex: 1, minWidth: 0 },
   optionName: { fontSize: 16, fontWeight: '700', color: colors.black, marginBottom: 2 },
   optionStops: { fontSize: 13, color: colors.textMuted },
+  optionPrice: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   optionTextCrossedOut: { textDecorationLine: 'line-through', color: colors.textMuted },
   optionCrossOut: { padding: 4 },
   acceptDisabled: { opacity: 0.5 },

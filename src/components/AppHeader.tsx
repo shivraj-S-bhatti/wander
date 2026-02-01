@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
@@ -19,10 +20,11 @@ type Props = {
 };
 
 export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement, centerElement }: Props) {
+  const insets = useSafeAreaInsets();
   const showToggle = viewMode != null && onViewModeChange != null;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 8) }]}>
       <View style={styles.row}>
         <Image source={logoSource} style={styles.logo} resizeMode="contain" accessibilityLabel="Wander" />
         {subtitle != null && centerElement == null ? (
