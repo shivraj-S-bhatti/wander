@@ -40,6 +40,9 @@ function apiUserToFriend(u: ApiUser): Friend {
   };
 }
 
+/** Static profile images for friends list: index 0 = existing, then celina, clyde, elana, kim, megan (cycle). */
+const FRIEND_AVATAR_BY_INDEX = ['celina', 'clyde', 'elana', 'kim', 'megan'] as const;
+
 function toFriendWithDemo(u: ApiUser): Friend {
   const demoUser = DEMO_USERS.find((d) => d.id === u.id);
   const demoFriend = DEMO_FRIENDS.find((f) => f.id === u.id);
@@ -51,6 +54,14 @@ function toFriendWithDemo(u: ApiUser): Friend {
     streak: demoFriend?.streak ?? u.streak ?? 0,
     rank: demoFriend?.rank ?? 0,
   };
+}
+
+function toFriendWithAvatarByIndex(u: ApiUser, index: number): Friend {
+  const friend = toFriendWithDemo(u);
+  if (index > 0) {
+    friend.avatar = FRIEND_AVATAR_BY_INDEX[(index - 1) % FRIEND_AVATAR_BY_INDEX.length];
+  }
+  return friend;
 }
 
 export function FriendsScreen() {
@@ -203,8 +214,8 @@ export function FriendsScreen() {
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
   const isSearchMode = searchQuery.trim().length > 0;
   const listData: Friend[] = isSearchMode
-    ? searchResults.map(toFriendWithDemo)
-    : friends.map(toFriendWithDemo);
+    ? searchResults.map((u, i) => toFriendWithAvatarByIndex(u, i))
+    : friends.map((u, i) => toFriendWithAvatarByIndex(u, i));
 
   const bellBadgeCount = token ? requests.length : 1;
 
