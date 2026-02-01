@@ -21,12 +21,14 @@ type Props = {
   /** Selected city id for "Wander [City]" — when set, shows location dropdown next to logo */
   selectedCityId?: string;
   onCityChange?: (cityId: string) => void;
+  /** When true, hide the city dropdown in the header (e.g. when city is shown on map overlay) */
+  hideLocationInHeader?: boolean;
 };
 
-export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement, centerElement, selectedCityId, onCityChange }: Props) {
+export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement, centerElement, selectedCityId, onCityChange, hideLocationInHeader }: Props) {
   const insets = useSafeAreaInsets();
   const showToggle = viewMode != null && onViewModeChange != null;
-  const showLocation = selectedCityId != null && onCityChange != null;
+  const showLocation = selectedCityId != null && onCityChange != null && !hideLocationInHeader;
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const currentCity = CITIES.find((c) => c.id === selectedCityId) ?? CITIES[0];
 

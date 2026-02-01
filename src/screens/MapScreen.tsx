@@ -12,6 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import { AppHeader } from '../components/AppHeader';
+import { CityBar } from '../components/CityBar';
+import { CityChips } from '../components/CityChips';
 import { PlaceCard } from '../components/PlaceCard';
 import { RouteSheet } from '../components/RouteSheet';
 import { getCityById } from '../data/cities';
@@ -63,6 +65,7 @@ export function MapScreen() {
         onViewModeChange={setViewMode}
         selectedCityId={selectedCityId}
         onCityChange={setSelectedCity}
+        hideLocationInHeader
       />
       {viewMode === 'list' ? (
         <View style={styles.listWrap}>
@@ -73,6 +76,7 @@ export function MapScreen() {
             placeholder="Search places..."
             placeholderTextColor={colors.placeholder}
           />
+          <CityChips selectedCityId={selectedCityId} onCityChange={setSelectedCity} />
           <FlatList
             data={listPlaces}
             keyExtractor={(item) => item.id}
@@ -90,6 +94,7 @@ export function MapScreen() {
       ) : (
         <View style={styles.main}>
           <View style={styles.mapWrap}>
+            <CityBar selectedCityId={selectedCityId} onCityChange={setSelectedCity} />
             <MapView
               ref={mapRef}
               style={StyleSheet.absoluteFill}

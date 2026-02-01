@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppHeader } from '../components/AppHeader';
+import { CityBar } from '../components/CityBar';
+import { CityChips } from '../components/CityChips';
 import { PlaceCard } from '../components/PlaceCard';
 import { getCityById } from '../data/cities';
 import { GOOGLE_MAPS_API_KEY } from '../config';
@@ -86,6 +88,9 @@ export function MapScreen() {
         center: { lat: city.center.lat, lng: city.center.lng },
         zoom: 14,
         mapTypeId: 'roadmap',
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
       mapInstanceRef.current = map;
 
@@ -209,8 +214,12 @@ export function MapScreen() {
           onViewModeChange={setViewMode}
           selectedCityId={selectedCityId}
           onCityChange={setSelectedCity}
+          hideLocationInHeader
         />
-        <Text style={styles.error}>{loadError}</Text>
+        <View style={styles.loadErrorWrap}>
+          <CityBar selectedCityId={selectedCityId} onCityChange={setSelectedCity} />
+          <Text style={[styles.error, styles.errorWithBar]}>{loadError}</Text>
+        </View>
       </View>
     );
   }
@@ -222,6 +231,7 @@ export function MapScreen() {
         onViewModeChange={setViewMode}
         selectedCityId={selectedCityId}
         onCityChange={setSelectedCity}
+        hideLocationInHeader
       />
       {viewMode === 'list' ? (
         <View style={styles.listWrap}>
@@ -232,6 +242,7 @@ export function MapScreen() {
             placeholder="Search places..."
             placeholderTextColor={colors.placeholder}
           />
+          <CityChips selectedCityId={selectedCityId} onCityChange={setSelectedCity} />
           <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
             {listPlaces.map((place) => (
               <PlaceCard
@@ -246,6 +257,7 @@ export function MapScreen() {
       ) : (
         <View style={styles.main}>
           <View style={styles.mapWrap}>
+            <CityBar selectedCityId={selectedCityId} onCityChange={setSelectedCity} />
             <div ref={mapRef} style={styles.mapDiv} />
             {!mapReady && (
               <View style={styles.loading}>
@@ -306,6 +318,8 @@ const styles = StyleSheet.create({
   },
   loadingText: { fontSize: 16, color: colors.textMuted },
   error: { padding: 16, color: colors.accent, fontSize: 16 },
+  loadErrorWrap: { flex: 1, position: 'relative' },
+  errorWithBar: { marginTop: 56 },
   fab: {
     position: 'absolute',
     bottom: 24,
