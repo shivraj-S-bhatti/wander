@@ -17,6 +17,7 @@ npm install
    - `EXPO_PUBLIC_GOOGLE_MAPS_KEY` — enable **Maps JavaScript API** (web map)
    - `EXPO_PUBLIC_GOOGLE_DIRECTIONS_KEY` — enable **Directions API** (route/cost)
    - `EXPO_PUBLIC_GEMINI_KEY` — enable **Generative Language API** (recommendations)
+   - For the backend (auth/user APIs): `MONGO_URI` and `JWT_SECRET` (see `.env.example`)
 3. **Web only:** The browser blocks Directions and Gemini (CORS). Run the proxy, then set `EXPO_PUBLIC_PROXY_BASE=http://localhost:3001` in `.env` and restart Expo:
    ```bash
    node scripts/proxy-server.mjs
@@ -24,6 +25,18 @@ npm install
 4. Never commit `.env` (it’s in `.gitignore`).
 
 ## Run
+
+**Start the backend** (auth and user APIs use MongoDB; backend reads `MONGO_URI` and `JWT_SECRET` from the root `.env`):
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+The API runs at `http://localhost:3000` (override with `PORT` in `.env`). Keep this running in a separate terminal.
+
+**Start the app:**
 
 ```bash
 # Web
