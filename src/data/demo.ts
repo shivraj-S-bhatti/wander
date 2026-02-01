@@ -1,6 +1,6 @@
 // Hardcoded demo data — timestamps are "recent" for demo feel (Date.now() - N hours)
 
-export type User = { id: string; name: string; avatar?: string };
+export type User = { id: string; name: string; avatar?: string; handle?: string; memberSince?: string };
 export type Place = {
   id: string;
   name: string;
@@ -50,6 +50,8 @@ export type Post = {
   experience: string;
   imageUris: string[];
   tags: string[];
+  /** Hours spent on this activity (for heatmap intensity). One activity per day. */
+  hoursSpent?: number;
 };
 
 const now = Date.now();

@@ -174,6 +174,7 @@ function postsReducer(state: Post[], action: Action): Post[] {
       experience: p.experience,
       imageUris: p.imageUris ?? [],
       tags: p.tags ?? [],
+      hoursSpent: p.hoursSpent,
     }));
   }
   if (action.type === 'ADD_POST') return [action.payload, ...state];
@@ -239,6 +240,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       experience: p.experience,
       imageUris: p.imageUris ?? [],
       tags: p.tags ?? [],
+      hoursSpent: p.hoursSpent,
     }));
     if (toStore.length > 0) savePosts(toStore);
   }, [state.posts]);

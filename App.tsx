@@ -9,10 +9,12 @@ import { MapScreen } from './src/screens/MapScreen';
 import { CommunityScreen } from './src/screens/CommunityScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { PlaceDetailScreen } from './src/screens/PlaceDetailScreen';
+import { ProfileDetailScreen } from './src/screens/ProfileDetailScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   PlaceDetail: { placeId: string };
+  ProfileDetail: { userId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -47,6 +49,11 @@ export default function App() {
             name="PlaceDetail"
             component={PlaceDetailScreen}
             options={{ title: 'Place' }}
+          />
+          <Stack.Screen
+            name="ProfileDetail"
+            component={ProfileDetailScreen}
+            options={{ headerShown: false }}
           />
         </Stack.Navigator>
         <StatusBar style="dark" />

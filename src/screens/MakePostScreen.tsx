@@ -5,11 +5,15 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { AppHeader } from '../components/AppHeader';
+import { MonthCalendar } from '../components/MonthCalendar';
 import { useStore } from '../state/store';
 import { POINTS_POST } from '../state/store';
+
+const WIDE_BREAKPOINT = 600;
 
 const RATING_OPTIONS = [1, 2, 3, 4, 5];
 const TAG_OPTIONS = ['food', 'coffee', 'outdoors', 'volunteer', 'chill', 'party', 'quiet', 'local'];
@@ -27,11 +31,14 @@ export function MakePostScreen() {
   const [whoWith, setWhoWith] = useState('');
   const [rating, setRating] = useState(0);
   const [experience, setExperience] = useState('');
+  const [hoursSpent, setHoursSpent] = useState<number>(1);
   const [tags, setTags] = useState<string[]>([]);
   const [customTagInput, setCustomTagInput] = useState('');
   const [selectedDateTs, setSelectedDateTs] = useState(startOfDay(Date.now()));
   const [saved, setSaved] = useState(false);
   const [pointsToast, setPointsToast] = useState(false);
+
+  const HOURS_OPTIONS = [0.5, 1, 2, 3, 4];
 
   const toggleTag = (tag: string) => {
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -55,6 +62,7 @@ export function MakePostScreen() {
         experience: experience.trim(),
         imageUris: [],
         tags,
+        hoursSpent,
       },
       noonOnSelected
     );
@@ -64,61 +72,59 @@ export function MakePostScreen() {
     setWhoWith('');
     setRating(0);
     setExperience('');
+    setHoursSpent(1);
     setTags([]);
     setSelectedDateTs(startOfDay(Date.now()));
     setTimeout(() => setSaved(false), 2000);
     setTimeout(() => setPointsToast(false), 2500);
   };
 
-  const days = Array.from({ length: 14 }, (_, i) => {
-    const t = startOfDay(Date.now()) - i * 24 * 60 * 60 * 1000;
-    return t;
-  });
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
 
-  return (
-    <View style={styles.container}>
-      <AppHeader />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <View style={styles.section}>
-          <Text style={styles.label}>What did you do?</Text>
-          <TextInput
-            style={styles.input}
-            value={what}
-            onChangeText={setWhat}
-            placeholder="e.g. Coffee at The Hive"
-            placeholderTextColor="#999"
-          />
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.label}>Who with?</Text>
-          <TextInput
-            style={styles.input}
-            value={whoWith}
-            onChangeText={setWhoWith}
-            placeholder="e.g. Alex, Sam"
-            placeholderTextColor="#999"
-          />
-        </View>
+  const formContent = (
+    <>
+      <View style={styles.section}>
+        <Text style={styles.label}>What did you do?</Text>
+        <TextInput
+          style={styles.input}
+          value={what}
+          onChangeText={setWhat}
+          placeholder="e.g. Coffee at The Hive"
+          placeholderTextColor="#999"
+        />
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.label}>Who with?</Text>
+        <TextInput
+          style={styles.input}
+          value={whoWith}
+          onChangeText={setWhoWith}
+          placeholder="e.g. Alex, Sam"
+          placeholderTextColor="#999"
+        />
+      </View>
+      {!isWide && (
         <View style={styles.section}>
           <Text style={styles.label}>Date</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.calendarStrip}>
-            {days.map((ts) => {
-              const d = new Date(ts);
-              const dayNum = d.getDate();
-              const dayName = d.toLocaleDateString([], { weekday: 'short' });
-              const isSelected = ts === selectedDateTs;
-              return (
-                <TouchableOpacity
-                  key={ts}
-                  style={[styles.calendarDay, isSelected && styles.calendarDaySelected]}
-                  onPress={() => setSelectedDateTs(ts)}
-                >
-                  <Text style={[styles.calendarDayName, isSelected && styles.calendarDayTextSelected]}>{dayName}</Text>
-                  <Text style={[styles.calendarDayNum, isSelected && styles.calendarDayTextSelected]}>{dayNum}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          <MonthCalendar value={selectedDateTs} onChange={setSelectedDateTs} />
+        </View>
+      )}
+        <View style={styles.section}>
+          <Text style={styles.label}>Hours spent</Text>
+          <View style={styles.ratingRow}>
+            {HOURS_OPTIONS.map((h) => (
+              <TouchableOpacity
+                key={h}
+                style={[styles.ratingBtn, hoursSpent === h && styles.ratingBtnActive]}
+                onPress={() => setHoursSpent(h)}
+              >
+                <Text style={[styles.ratingText, hoursSpent === h && styles.ratingTextActive]}>
+                  {h === 4 ? '4+' : String(h)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
         <View style={styles.section}>
           <Text style={styles.label}>Rating (1–5)</Text>
@@ -192,7 +198,27 @@ export function MakePostScreen() {
         >
           <Text style={styles.saveBtnText}>{saved ? 'Saved!' : 'Save'}</Text>
         </TouchableOpacity>
-      </ScrollView>
+    </>
+  );
+
+  return (
+    <View style={styles.container}>
+      <AppHeader />
+      {isWide ? (
+        <View style={styles.wideRow}>
+          <ScrollView style={styles.formScroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            {formContent}
+          </ScrollView>
+          <View style={styles.calendarPanel}>
+            <Text style={styles.calendarPanelLabel}>Date</Text>
+            <MonthCalendar value={selectedDateTs} onChange={setSelectedDateTs} />
+          </View>
+        </View>
+      ) : (
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          {formContent}
+        </ScrollView>
+      )}
       {pointsToast && (
         <View style={styles.pointsToast}>
           <Text style={styles.pointsToastText}>+{POINTS_POST} civic points!</Text>
@@ -202,9 +228,22 @@ export function MakePostScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   scroll: { flex: 1 },
+  wideRow: { flex: 1, flexDirection: 'row' },
+  formScroll: { flex: 1, minWidth: 280 },
+  calendarPanel: {
+    width: 320,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 32,
+    borderLeftWidth: 1,
+    borderLeftColor: '#e5e5e5',
+    backgroundColor: '#fff',
+  },
+  calendarPanelLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 12 },
   content: { padding: 16, paddingBottom: 32 },
   section: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8 },
@@ -218,21 +257,6 @@ const styles = StyleSheet.create({
     borderColor: '#e5e5e5',
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  calendarStrip: { marginHorizontal: -4 },
-  calendarDay: {
-    width: 52,
-    marginHorizontal: 4,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
-  },
-  calendarDaySelected: { backgroundColor: '#facc15', borderColor: '#eab308' },
-  calendarDayName: { fontSize: 11, color: '#666' },
-  calendarDayNum: { fontSize: 18, fontWeight: '700', color: '#333', marginTop: 2 },
-  calendarDayTextSelected: { color: '#1a1a2e' },
   ratingRow: { flexDirection: 'row', gap: 8 },
   ratingBtn: {
     width: 40,
