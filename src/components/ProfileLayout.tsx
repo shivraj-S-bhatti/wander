@@ -1,6 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,18 +10,23 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
 import { CURRENT_USER_ID, DEMO_USERS } from '../data/demo';
 import type { Post } from '../data/demo';
 import { clearStoredAuth } from '../services/authStorage';
+import * as friendRequestsApi from '../services/friendRequests';
 import { useStore } from '../state/store';
 import { useAppDispatch } from '../state/reduxStore';
 import { logout } from '../state/authSlice';
+import type { RootState } from '../state/reduxStore';
 import { colors } from '../theme';
 import { ActivityHeatmap } from './ProfileFeed';
 
 type Props = {
   userId: string;
   isOwnProfile: boolean;
+  /** When viewing another user (e.g. from friends list), pass their display name for the header */
+  displayName?: string;
 };
 
 function deriveHandle(name: string, id: string): string {
@@ -27,10 +34,33 @@ function deriveHandle(name: string, id: string): string {
   return '@' + name.toLowerCase().replace(/\s/g, '');
 }
 
-export function ProfileLayout({ userId, isOwnProfile }: Props) {
+export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
+  const token = useSelector((s: RootState) => s.auth.token);
+  const authUser = useSelector((s: RootState) => s.auth.user);
+  const myFriendIds = useSelector((s: RootState) => s.auth.user?.friends ?? []);
+  const isAlreadyFriend = myFriendIds.includes(userId);
   const { state, getBadges, getLevel, getStreak, getNextBadgeProgress } = useStore();
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+
+  const handleSendFriendRequest = useCallback(async () => {
+    if (!token) {
+      Alert.alert('Log in', 'Log in to send a friend request.');
+      return;
+    }
+    if (userId === CURRENT_USER_ID) return;
+    setSendingRequest(true);
+    try {
+      await friendRequestsApi.sendFriendRequest(token, userId);
+      setRequestSent(true);
+    } catch (err) {
+      Alert.alert('Could not send request', err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      setSendingRequest(false);
+    }
+  }, [token, userId]);
 
   const handleLogout = async () => {
     await clearStoredAuth();
@@ -39,7 +69,11 @@ export function ProfileLayout({ userId, isOwnProfile }: Props) {
     stack?.reset({ routes: [{ name: 'Login' }] });
   };
 
-  const user = useMemo(() => DEMO_USERS.find((u) => u.id === userId) ?? { id: userId, name: 'Unknown' }, [userId]);
+  const user = useMemo(() => {
+    if (displayName != null) return { id: userId, name: displayName };
+    if (isOwnProfile && authUser) return { id: userId, name: authUser.username };
+    return DEMO_USERS.find((u) => u.id === userId) ?? { id: userId, name: 'Unknown' };
+  }, [userId, displayName, isOwnProfile, authUser]);
   const posts = useMemo(() => state.posts.filter((p) => p.userId === userId), [state.posts, userId]);
 
   const civicPoints = isOwnProfile ? state.profile.civicPoints : 0;
@@ -59,9 +93,28 @@ export function ProfileLayout({ userId, isOwnProfile }: Props) {
             <Ionicons name="chevron-back" size={28} color={colors.black} />
           </TouchableOpacity>
           <Text style={styles.headerName} numberOfLines={1}>{user.name}</Text>
-          <TouchableOpacity style={styles.headerPlusBtn} accessibilityLabel="Add" accessibilityRole="button">
-            <Ionicons name="add" size={24} color={colors.white} />
-          </TouchableOpacity>
+          {!isAlreadyFriend ? (
+            <TouchableOpacity
+              style={styles.headerPlusBtn}
+              onPress={handleSendFriendRequest}
+              disabled={sendingRequest || requestSent}
+              accessibilityLabel={requestSent ? 'Request sent' : 'Send friend request'}
+              accessibilityRole="button"
+            >
+              {sendingRequest ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : requestSent ? (
+                <Ionicons name="checkmark" size={24} color={colors.white} />
+              ) : (
+                <Ionicons name="add" size={24} color={colors.white} />
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.headerFriendsBadge}>
+              <Ionicons name="people" size={20} color={colors.textMuted} />
+              <Text style={styles.headerFriendsBadgeText}>Friends</Text>
+            </View>
+          )}
         </View>
       )}
       <View style={styles.profileSection}>
@@ -181,6 +234,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerFriendsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  headerFriendsBadgeText: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
   list: { paddingBottom: 24, backgroundColor: colors.background },
   profileSection: {
     backgroundColor: colors.white,

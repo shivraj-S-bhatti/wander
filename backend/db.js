@@ -22,6 +22,19 @@ export async function connectDB() {
   const users = db.collection('users');
   await users.createIndex({ email: 1 }, { unique: true });
   await users.createIndex({ username: 1 }, { unique: true });
+  // Ensure existing users have friends array and civicPoints
+  await users.updateMany({ friends: { $exists: false } }, { $set: { friends: [] } });
+  await users.updateMany({ civicPoints: { $exists: false } }, { $set: { civicPoints: 0 } });
+  await users.updateMany({ streak: { $exists: false } }, { $set: { streak: 0 } });
+
+  const friendRequests = db.collection('friend_requests');
+  await friendRequests.createIndex(
+    { fromUserId: 1, toUserId: 1 },
+    { unique: true }
+  );
+  await friendRequests.createIndex({ toUserId: 1, status: 1 });
+  await friendRequests.createIndex({ fromUserId: 1, status: 1 });
+
   console.log('MongoDB connected');
   return db;
 }

@@ -8,7 +8,10 @@ const SALT_ROUNDS = 10;
 function toSafeUser(user) {
   if (!user) return null;
   const id = user._id ? user._id.toString() : user.id;
-  return { id, username: user.username, email: user.email };
+  const friends = (user.friends || []).map((f) => (typeof f === 'string' ? f : f.toString()));
+  const civicPoints = typeof user.civicPoints === 'number' ? user.civicPoints : 0;
+  const streak = typeof user.streak === 'number' ? user.streak : 0;
+  return { id, username: user.username, email: user.email, friends, civicPoints, streak };
 }
 
 function signToken(payload) {

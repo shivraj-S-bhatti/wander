@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-export type AuthUser = { id: string; username: string; email: string };
+export type AuthUser = { id: string; username: string; email: string; civicPoints?: number; streak?: number; friends?: string[] };
 
 type AuthState = {
   user: AuthUser | null;

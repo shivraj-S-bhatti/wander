@@ -26,7 +26,7 @@ export type RootStackParamList = {
   Signup: undefined;
   MainTabs: undefined;
   PlaceDetail: { placeId: string };
-  ProfileDetail: { userId: string };
+  ProfileDetail: { userId: string; username?: string };
   Leaderboard: undefined;
 };
 
