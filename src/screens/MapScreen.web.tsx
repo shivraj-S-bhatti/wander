@@ -72,6 +72,15 @@ export function MapScreen() {
     : DEMO_PLACES;
 
   useEffect(() => {
+    if (viewMode !== 'map') {
+      setMapReady(false);
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+      mapInstanceRef.current = null;
+      delete window.initExploreMap;
+      return;
+    }
+
     if (!mapRef.current || !GOOGLE_MAPS_API_KEY) {
       setLoadError('No map API key');
       return;
@@ -116,7 +125,11 @@ export function MapScreen() {
 
     if (window.google?.maps) {
       initMap();
-      return;
+      return () => {
+        markersRef.current.forEach((m) => m.setMap(null));
+        markersRef.current = [];
+        mapInstanceRef.current = null;
+      };
     }
 
     window.initExploreMap = initMap;
@@ -133,7 +146,7 @@ export function MapScreen() {
       mapInstanceRef.current = null;
       delete window.initExploreMap;
     };
-  }, [nav]);
+  }, [nav, viewMode]);
 
   if (loadError) {
     return (
