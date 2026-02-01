@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useMemo } from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +13,7 @@ import { CURRENT_USER_ID, DEMO_USERS } from '../data/demo';
 import type { Post } from '../data/demo';
 import { useStore } from '../state/store';
 import { colors } from '../theme';
+import { getFaceSource } from '../utils/avatarFaces';
 import { ActivityHeatmap } from './ProfileFeed';
 
 type Props = {
@@ -54,7 +56,21 @@ export function ProfileLayout({ userId, isOwnProfile }: Props) {
         </View>
       )}
       <View style={styles.profileSection}>
-        <View style={styles.avatar} />
+        {(() => {
+          const faceSrc = getFaceSource(user.avatar);
+          if (faceSrc != null && typeof faceSrc === 'number') {
+            return <Image source={faceSrc} style={styles.avatar} resizeMode="cover" />;
+          }
+          if (faceSrc != null && typeof faceSrc === 'object' && 'uri' in faceSrc) {
+            return <Image source={faceSrc} style={styles.avatar} resizeMode="cover" />;
+          }
+          const initial = (user.name ?? '?').charAt(0).toUpperCase();
+          return (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarInitial}>{initial}</Text>
+            </View>
+          );
+        })()}
         <Text style={styles.handle}>{handle}</Text>
         <Text style={styles.memberSince}>{memberSince}</Text>
         <TouchableOpacity style={styles.actionBtn}>
@@ -121,8 +137,13 @@ export function ProfileLayout({ userId, isOwnProfile }: Props) {
       <View style={styles.badgesRow}>
         {badges.map((b) => (
           <View key={b.label} style={[styles.badgeChip, b.unlocked && styles.badgeChipUnlocked]}>
+            {b.unlocked ? (
+              <Ionicons name="trophy" size={14} color="#C9A227" style={styles.badgeIcon} />
+            ) : (
+              <Ionicons name="lock-closed-outline" size={14} color={colors.textMuted} style={styles.badgeIcon} />
+            )}
             <Text style={[styles.badgeText, b.unlocked && styles.badgeTextUnlocked]}>
-              {b.unlocked ? '✓ ' : ''}{b.label}
+              {b.label}
             </Text>
           </View>
         ))}
@@ -174,6 +195,15 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     backgroundColor: colors.border,
     marginBottom: 12,
+  },
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: colors.textMuted,
   },
   handle: { fontSize: 16, fontWeight: '600', color: colors.black, marginBottom: 4 },
   memberSince: { fontSize: 12, color: colors.textMuted, marginBottom: 12 },
@@ -237,8 +267,25 @@ const styles = StyleSheet.create({
   progressBarBg: { height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' },
   progressBarFill: { height: '100%', backgroundColor: colors.accent, borderRadius: 4 },
   badgesRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginHorizontal: 16, marginBottom: 16 },
-  badgeChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.background },
-  badgeChipUnlocked: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.accent },
+  badgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+  },
+  badgeChipUnlocked: {
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: '#C9A227',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  badgeIcon: { marginRight: 6 },
   badgeText: { fontSize: 12, color: colors.textMuted },
-  badgeTextUnlocked: { color: colors.accent, fontWeight: '600' },
+  badgeTextUnlocked: { color: colors.black, fontWeight: '700' },
 });

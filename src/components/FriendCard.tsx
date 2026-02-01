@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors } from '../theme';
+import { getFaceSource } from '../utils/avatarFaces';
 import type { Friend } from '../data/demo';
 
 type Props = {
@@ -10,13 +11,17 @@ type Props = {
 
 export function FriendCard({ friend, onPress }: Props) {
   const initial = friend.username.charAt(0).toUpperCase();
-  const hasAvatar = friend.avatar != null && friend.avatar.length > 0;
+  const faceSrc = getFaceSource(friend.avatar);
 
   const content = (
     <>
       <View style={styles.avatarWrap}>
-        {hasAvatar ? (
-          <Image source={{ uri: friend.avatar }} style={styles.avatar} />
+        {faceSrc != null ? (
+          <Image
+            source={typeof faceSrc === 'number' ? faceSrc : faceSrc}
+            style={styles.avatar}
+            resizeMode="cover"
+          />
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarInitial}>{initial}</Text>

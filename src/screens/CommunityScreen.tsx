@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppHeader } from '../components/AppHeader';
-import { EventCard } from '../components/EventCard';
+import { VolunteerCard } from '../components/VolunteerCard';
+import { CommunityFeedCard } from '../components/CommunityFeedCard';
 import { useStore } from '../state/store';
+import { DEMO_CHECKINS, DEMO_PLACES, DEMO_USERS } from '../data/demo';
+import { getFeedImage } from '../utils/feedImages';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../../App';
+import type { Checkin } from '../data/demo';
 
 type CommunityNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
+
+const feedCheckins = [...DEMO_CHECKINS].sort((a, b) => b.ts - a.ts);
 
 export function CommunityScreen() {
   const navigation = useNavigation<CommunityNavProp>();
@@ -27,31 +33,64 @@ export function CommunityScreen() {
     navigation.navigate('Leaderboard');
   };
 
+  const renderFeedItem = ({ item }: { item: Checkin }) => {
+    const place = DEMO_PLACES.find((p) => p.id === item.placeId);
+    const user = DEMO_USERS.find((u) => u.id === item.userId);
+    if (!place || !user) return null;
+    return (
+      <CommunityFeedCard
+        checkin={item}
+        placeName={place.name}
+        userName={user.name}
+        avatarFaceKey={user.avatar}
+        activityImageSource={getFeedImage(item.id)}
+      />
+    );
+  };
+
+  const ListHeader = useMemo(
+    () => (
+      <>
+        <AppHeader />
+        <Text style={styles.sectionTitle}>Volunteer!</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carousel}
+        >
+          {events.map((item) => (
+            <VolunteerCard
+              key={item.id}
+              event={item}
+              joined={item.joinedUserIds.includes('u_me')}
+              onJoin={() => handleJoin(item.id, item.pointsReward)}
+            />
+          ))}
+        </ScrollView>
+        <Text style={styles.sectionTitle}>Your Feed</Text>
+      </>
+    ),
+    [events]
+  );
+
   return (
     <View style={styles.container}>
-      <AppHeader subtitle="Join events, earn civic points" />
+      <FlatList
+        data={feedCheckins}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={ListHeader}
+        renderItem={renderFeedItem}
+        contentContainerStyle={styles.list}
+      />
       <TouchableOpacity
-        style={styles.leaderboardButton}
+        style={styles.leaderboardFab}
         onPress={openLeaderboard}
         accessibilityLabel="View leaderboard"
         accessibilityRole="button"
       >
-        <Ionicons name="podium-outline" size={20} color={colors.white} />
-        <Text style={styles.leaderboardButtonText}>View leaderboard</Text>
+        <Ionicons name="podium-outline" size={24} color={colors.white} />
+        <Text style={styles.leaderboardFabText}>Leaderboard</Text>
       </TouchableOpacity>
-      <FlatList
-        data={events}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <EventCard
-            event={item}
-            joined={item.joinedUserIds.includes('u_me')}
-            onJoin={() => handleJoin(item.id, item.pointsReward)}
-            elevated
-          />
-        )}
-        contentContainerStyle={styles.list}
-      />
       {pointsToast !== null && (
         <View style={styles.pointsToast}>
           <Text style={styles.pointsToastText}>+{pointsToast} civic points!</Text>
@@ -63,20 +102,37 @@ export function CommunityScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  leaderboardButton: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    color: colors.black,
+  },
+  carousel: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  list: { paddingBottom: 80 },
+  leaderboardFab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 12,
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 12,
     backgroundColor: colors.accent,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  leaderboardButtonText: { fontSize: 16, fontWeight: '600', color: colors.white },
-  list: { paddingBottom: 24 },
+  leaderboardFabText: { fontSize: 14, fontWeight: '600', color: colors.white },
   pointsToast: {
     position: 'absolute',
     bottom: 24,

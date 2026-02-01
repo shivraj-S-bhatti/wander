@@ -1,6 +1,8 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
+import { getFaceSource } from '../utils/avatarFaces';
 import type { Friend } from '../data/demo';
 
 type Props = {
@@ -9,13 +11,17 @@ type Props = {
 
 export function LeaderboardCard({ entry }: Props) {
   const initial = entry.username.charAt(0).toUpperCase();
-  const hasAvatar = entry.avatar != null && entry.avatar.length > 0;
+  const faceSrc = getFaceSource(entry.avatar);
 
   return (
     <View style={styles.card}>
       <View style={styles.avatarWrap}>
-        {hasAvatar ? (
-          <Image source={{ uri: entry.avatar }} style={styles.avatar} />
+        {faceSrc != null ? (
+          <Image
+            source={typeof faceSrc === 'number' ? faceSrc : faceSrc}
+            style={styles.avatar}
+            resizeMode="cover"
+          />
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarInitial}>{initial}</Text>
@@ -28,7 +34,17 @@ export function LeaderboardCard({ entry }: Props) {
           {entry.civicScore} pts · {entry.streak} day streak
         </Text>
       </View>
-      <Text style={styles.rank}>#{entry.rank}</Text>
+      <View style={styles.rankWrap}>
+        {entry.rank <= 3 && (
+          <Ionicons
+            name="trophy"
+            size={18}
+            color={entry.rank === 1 ? '#C9A227' : entry.rank === 2 ? '#C0C0C0' : '#CD7F32'}
+            style={styles.rankIcon}
+          />
+        )}
+        <Text style={styles.rank}>#{entry.rank}</Text>
+      </View>
     </View>
   );
 }
@@ -82,6 +98,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
   },
+  rankWrap: { alignItems: 'flex-end' },
+  rankIcon: { marginBottom: 2 },
   rank: {
     fontSize: 28,
     fontWeight: '700',

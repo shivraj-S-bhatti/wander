@@ -1,11 +1,12 @@
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { RouteSheet } from '../components/RouteSheet';
-import { DEMO_ORIGIN, DEMO_PLACES, DEMO_REVIEWS } from '../data/demo';
+import { DEMO_ORIGIN, DEMO_PLACES, DEMO_REVIEWS, DEMO_USERS } from '../data/demo';
 import { useStore } from '../state/store';
 import { colors } from '../theme';
 import { formatRelative } from '../utils/time';
+import { getFaceSource } from '../utils/avatarFaces';
 
 type StackParamList = { PlaceDetail: { placeId: string } };
 
@@ -55,13 +56,36 @@ export function PlaceDetailScreen() {
       )}
       <Text style={styles.sectionTitle}>Reviews</Text>
       {reviews.length === 0 && <Text style={styles.empty}>No reviews yet</Text>}
-      {reviews.map((r) => (
-        <View key={r.id} style={styles.review}>
-          <Text style={styles.reviewRating}>★ {r.rating}</Text>
-          <Text style={styles.reviewText}>{r.text}</Text>
-          <Text style={styles.reviewTime}>{formatRelative(r.ts)}</Text>
-        </View>
-      ))}
+      {reviews.map((r) => {
+        const reviewer = DEMO_USERS.find((u) => u.id === r.userId);
+        const faceSrc = reviewer ? getFaceSource(reviewer.avatar) : null;
+        const initial = reviewer ? reviewer.name.charAt(0).toUpperCase() : '?';
+        return (
+          <View key={r.id} style={styles.review}>
+            <View style={styles.reviewRow}>
+              <View style={styles.reviewAvatarWrap}>
+                {faceSrc != null ? (
+                  <Image
+                    source={typeof faceSrc === 'number' ? faceSrc : faceSrc}
+                    style={styles.reviewAvatar}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.reviewAvatarFallback}>
+                    <Text style={styles.reviewAvatarInitial}>{initial}</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.reviewContent}>
+                {reviewer && <Text style={styles.reviewName}>{reviewer.name}</Text>}
+                <Text style={styles.reviewRating}>★ {r.rating}</Text>
+                <Text style={styles.reviewText}>{r.text}</Text>
+                <Text style={styles.reviewTime}>{formatRelative(r.ts)}</Text>
+              </View>
+            </View>
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -80,6 +104,20 @@ const styles = StyleSheet.create({
   sectionTitle: { fontWeight: '700', fontSize: 18, marginBottom: 12 },
   empty: { color: colors.textMuted, marginBottom: 16 },
   review: { marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+  reviewRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  reviewAvatarWrap: { marginRight: 12 },
+  reviewAvatar: { width: 40, height: 40, borderRadius: 20 },
+  reviewAvatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewAvatarInitial: { fontSize: 16, fontWeight: '600', color: colors.textMuted },
+  reviewContent: { flex: 1 },
+  reviewName: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 2 },
   reviewRating: { fontSize: 14, color: colors.accent, marginBottom: 4 },
   reviewText: { fontSize: 14, color: colors.black, marginBottom: 4 },
   reviewTime: { fontSize: 11, color: colors.textMuted },
