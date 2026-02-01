@@ -1,15 +1,18 @@
 import React, { createContext, useCallback, useContext, useEffect, useReducer } from 'react';
 import {
   CURRENT_USER_ID,
+  DEMO_CHECKINS,
   DEMO_EVENTS,
   DEMO_PLACES,
   DEMO_RECS,
+  DEMO_USERS,
   type Event,
   type Place,
   type Post,
 } from '../data/demo';
+import { GEMINI_API_KEY } from '../config';
 import { fetchRecommendations, type GeminiRecItem, type MemorySummary } from '../services/gemini';
-import { loadProfile, loadPosts, saveProfile, savePosts, type StoredProfile, type StoredPost } from '../services/storage';
+import { loadProfile, loadPlan, loadPosts, saveProfile, savePlan, savePosts, type StoredProfile, type StoredPost } from '../services/storage';
 
 // ——— Civic points rules (hardcoded)
 const POINTS_JOIN_EVENT = (e: Event) => e.pointsReward;
@@ -42,6 +45,18 @@ type ProfileState = {
   recsError: string | null;
 };
 
+export type ActivePlan = { placeIds: string[]; name?: string };
+
+type PlanState = {
+  activePlan: ActivePlan | null;
+  openPlanModal: boolean;
+};
+
+const defaultPlan: PlanState = {
+  activePlan: null,
+  openPlanModal: false,
+};
+
 const defaultProfile: ProfileState = {
   civicPoints: 0,
   prefs: {},
@@ -56,6 +71,7 @@ const defaultProfile: ProfileState = {
 
 type AppState = {
   profile: ProfileState;
+  plan: PlanState;
   events: Event[];
   posts: Post[];
 };
@@ -72,7 +88,11 @@ type Action =
   | { type: 'CHOOSE_PLACE'; placeId: string; category: string; tags: string[] }
   | { type: 'SET_GEMINI_RECS'; recs: GeminiRecItem[] | null; error: string | null }
   | { type: 'SET_LOADING_RECS'; loading: boolean }
-  | { type: 'HYDRATE_EVENTS'; events: Event[] };
+  | { type: 'HYDRATE_EVENTS'; events: Event[] }
+  | { type: 'SET_ACTIVE_PLAN'; payload: ActivePlan | null }
+  | { type: 'CLEAR_ACTIVE_PLAN' }
+  | { type: 'SET_OPEN_PLAN_MODAL'; payload: boolean }
+  | { type: 'LOAD_PLAN'; payload: ActivePlan | null };
 
 function profileReducer(state: ProfileState, action: Action): ProfileState {
   switch (action.type) {
@@ -136,6 +156,21 @@ function profileReducer(state: ProfileState, action: Action): ProfileState {
   }
 }
 
+function planReducer(state: PlanState, action: Action): PlanState {
+  switch (action.type) {
+    case 'LOAD_PLAN':
+      return { ...state, activePlan: action.payload };
+    case 'SET_ACTIVE_PLAN':
+      return { ...state, activePlan: action.payload };
+    case 'CLEAR_ACTIVE_PLAN':
+      return { ...state, activePlan: null };
+    case 'SET_OPEN_PLAN_MODAL':
+      return { ...state, openPlanModal: action.payload };
+    default:
+      return state;
+  }
+}
+
 function eventsReducer(state: Event[], action: Action): Event[] {
   if (action.type === 'HYDRATE_EVENTS') return action.events;
   if (action.type === 'MERGE_JOINED_INTO_EVENTS') {
@@ -158,6 +193,7 @@ function eventsReducer(state: Event[], action: Action): Event[] {
 
 const initialState: AppState = {
   profile: defaultProfile,
+  plan: defaultPlan,
   events: DEMO_EVENTS.map((e) => ({ ...e, joinedUserIds: [...e.joinedUserIds] })),
   posts: [],
 };
@@ -184,6 +220,7 @@ function postsReducer(state: Post[], action: Action): Post[] {
 function rootReducer(state: AppState, action: Action): AppState {
   return {
     profile: profileReducer(state.profile, action),
+    plan: planReducer(state.plan, action),
     events: eventsReducer(state.events, action),
     posts: postsReducer(state.posts, action),
   };
@@ -201,6 +238,9 @@ type StoreContextValue = {
   getLevel: () => number;
   getStreak: () => number;
   getNextBadgeProgress: () => { label: string; pointsToNext: number; current: number; threshold: number } | null;
+  setActivePlan: (plan: ActivePlan | null) => void;
+  clearActivePlan: () => void;
+  setOpenPlanModal: (open: boolean) => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -214,6 +254,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (p?.joinedEventIds?.length) dispatch({ type: 'MERGE_JOINED_INTO_EVENTS', joinedEventIds: p.joinedEventIds });
     });
     loadPosts().then((list) => dispatch({ type: 'LOAD_POSTS', payload: list }));
+    loadPlan().then((p) => dispatch({ type: 'LOAD_PLAN', payload: p }));
   }, []);
 
   useEffect(() => {
@@ -228,6 +269,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
     saveProfile(profile);
   }, [state.profile]);
+
+  useEffect(() => {
+    if (state.plan.activePlan) savePlan(state.plan.activePlan);
+    else savePlan(null);
+  }, [state.plan.activePlan]);
 
   useEffect(() => {
     const toStore: StoredPost[] = state.posts.map((p) => ({
@@ -276,15 +322,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       vibe: state.profile.prefs.vibe,
       budget: state.profile.prefs.budget,
     };
-    const friendSummary = 'Alex visited The Hive Coffee. Sam visited Sunset Bar & Grill. Jordan was at Marina Green. Riley volunteered at Downtown Community Center.';
+    const friendSummary = DEMO_CHECKINS.slice()
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 10)
+      .map((c) => {
+        const user = DEMO_USERS.find((u) => u.id === c.userId);
+        const place = DEMO_PLACES.find((p) => p.id === c.placeId);
+        const name = user?.name ?? 'Someone';
+        const placeName = place?.name ?? 'a place';
+        const action = c.type === 'volunteer' ? 'volunteered at' : 'visited';
+        return `${name} ${action} ${placeName}${c.note ? ` — ${c.note}` : ''}`;
+      })
+      .join('. ');
     const placesSummary = DEMO_PLACES.map((p) => `${p.id} | ${p.name} | ${p.category} | ${p.tags.join(', ')} | ${p.priceTier}`).join('\n');
 
-    if (!geminiKey) {
+    const key = geminiKey ?? GEMINI_API_KEY;
+    if (!key) {
       dispatch({ type: 'SET_GEMINI_RECS', recs: DEMO_RECS, error: null });
       return;
     }
     try {
-      const res = await fetchRecommendations(geminiKey, memory, friendSummary, placesSummary);
+      const res = await fetchRecommendations(key, memory, friendSummary, placesSummary);
       dispatch({ type: 'SET_GEMINI_RECS', recs: res.recs || DEMO_RECS, error: null });
     } catch {
       dispatch({ type: 'SET_GEMINI_RECS', recs: DEMO_RECS, error: 'Using fallback recs' });
@@ -336,6 +394,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
   }, [state.profile.civicPoints]);
 
+  const setActivePlan = useCallback((plan: ActivePlan | null) => {
+    dispatch({ type: 'SET_ACTIVE_PLAN', payload: plan });
+  }, []);
+
+  const clearActivePlan = useCallback(() => {
+    dispatch({ type: 'CLEAR_ACTIVE_PLAN' });
+  }, []);
+
+  const setOpenPlanModal = useCallback((open: boolean) => {
+    dispatch({ type: 'SET_OPEN_PLAN_MODAL', payload: open });
+  }, []);
+
   const value: StoreContextValue = {
     state,
     dispatch,
@@ -348,6 +418,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     getLevel,
     getStreak,
     getNextBadgeProgress,
+    setActivePlan,
+    clearActivePlan,
+    setOpenPlanModal,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

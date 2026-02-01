@@ -1,7 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,15 +11,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AppHeader } from '../components/AppHeader';
 import { PlaceCard } from '../components/PlaceCard';
 import { DEMO_EVENTS, DEMO_MAP_CENTER, DEMO_PLACES } from '../data/demo';
-import { GOOGLE_MAPS_API_KEY } from '../config';
+import { GOOGLE_MAPS_API_KEY, GEMINI_API_KEY } from '../config';
+import { fetchItineraryOptions, type ItineraryOption } from '../services/gemini';
+import { useStore } from '../state/store';
 import { colors } from '../theme';
 
 const FEELING_OPTIONS = ['chill', 'party', 'quiet', 'outdoors'] as const;
 const BUDGET_OPTIONS = ['low', 'med', 'high'] as const;
-type GeneratePhase = 'idle' | 'loading' | 'result';
+const PLAN_STAR_ORANGE = '#F97316';
 
 // Google Maps JS API (loaded via script) — minimal types
 interface GoogleMarkerInstance {
@@ -42,6 +47,7 @@ declare global {
 
 export function MapScreen() {
   const nav = useNavigation();
+  const { state, setActivePlan, setOpenPlanModal } = useStore();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<GoogleMapInstance | null>(null);
   const markersRef = useRef<GoogleMarkerInstance[]>([]);
@@ -49,18 +55,117 @@ export function MapScreen() {
   const [listSearch, setListSearch] = useState('');
   const [mapReady, setMapReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [planModalVisible, setPlanModalVisible] = useState(false);
+  const [planModalMode, setPlanModalMode] = useState<'form' | 'results' | 'viewPlan'>('form');
   const [startLocation, setStartLocation] = useState('');
   const [feeling, setFeeling] = useState<string | null>(null);
   const [budget, setBudget] = useState<string | null>(null);
   const [hoursOutside, setHoursOutside] = useState(3);
-  const [phase, setPhase] = useState<GeneratePhase>('idle');
+  const [generating, setGenerating] = useState(false);
+  const [generatedOptions, setGeneratedOptions] = useState<ItineraryOption[] | null>(null);
+  const [crossedOutIndices, setCrossedOutIndices] = useState<Set<number>>(new Set());
+  const glowAnim = useRef(new Animated.Value(0.4)).current;
+  const hasActivePlan = state.plan.activePlan != null;
 
-  const onGenerate = () => {
-    setPhase('loading');
-    setTimeout(() => setPhase('result'), 1500);
+  useEffect(() => {
+    if (!hasActivePlan) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, { toValue: 1, duration: 750, useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0.4, duration: 750, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [hasActivePlan, glowAnim]);
+
+  useEffect(() => {
+    if (state.plan.openPlanModal) {
+      setPlanModalMode('form');
+      setGeneratedOptions(null);
+      setCrossedOutIndices(new Set());
+      setPlanModalVisible(true);
+      setOpenPlanModal(false);
+    }
+  }, [state.plan.openPlanModal, setOpenPlanModal]);
+
+  const openPlanModal = () => {
+    setPlanModalMode('form');
+    setGeneratedOptions(null);
+    setCrossedOutIndices(new Set());
+    setPlanModalVisible(true);
   };
-  const resultTime = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  const mockWeather = [72, 70, 68, 65, 64, 63];
+
+  const openPlanModalViewPlan = () => {
+    setPlanModalMode('viewPlan');
+    setPlanModalVisible(true);
+  };
+
+  const closePlanModal = () => {
+    setPlanModalVisible(false);
+    setPlanModalMode('form');
+    setGeneratedOptions(null);
+    setCrossedOutIndices(new Set());
+  };
+
+  const onGenerate = async () => {
+    setGenerating(true);
+    setGeneratedOptions(null);
+    const placesSummary = DEMO_PLACES.map((p) => `${p.id} | ${p.name} | ${p.category} | ${p.tags.join(', ')} | ${p.priceTier}`).join('\n');
+    try {
+      const { options } = await fetchItineraryOptions(
+        GEMINI_API_KEY,
+        { startLocation: startLocation || undefined, vibe: feeling || undefined, budget: budget || undefined, hoursOutside },
+        placesSummary
+      );
+      const opts = options?.length ? options : FALLBACK_OPTIONS;
+      setGeneratedOptions(opts);
+      setPlanModalMode('results');
+    } catch {
+      setGeneratedOptions(FALLBACK_OPTIONS);
+      setPlanModalMode('results');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const toggleCrossOut = (index: number) => {
+    setCrossedOutIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const visibleOptions = generatedOptions
+    ? generatedOptions
+        .map((opt, index) => ({ option: opt, index }))
+        .filter(({ index }) => !crossedOutIndices.has(index))
+    : [];
+
+  const onAcceptPlan = () => {
+    const first = visibleOptions[0]?.option;
+    if (first?.placeIds?.length) {
+      setActivePlan({ placeIds: first.placeIds, name: first.name });
+      setGeneratedOptions(null);
+      setCrossedOutIndices(new Set());
+      setPlanModalVisible(false);
+    }
+  };
+
+  const onTryAgain = () => {
+    setGeneratedOptions(null);
+    setCrossedOutIndices(new Set());
+  };
+
+  const planPlaces = useMemo(() => {
+    const plan = state.plan.activePlan;
+    if (!plan?.placeIds?.length) return [];
+    return plan.placeIds
+      .map((id) => DEMO_PLACES.find((p) => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => p != null);
+  }, [state.plan.activePlan]);
 
   const listPlaces = listSearch.trim()
     ? DEMO_PLACES.filter(
@@ -70,6 +175,39 @@ export function MapScreen() {
           p.tags.some((t) => t.toLowerCase().includes(listSearch.trim().toLowerCase()))
       )
     : DEMO_PLACES;
+
+  const onPlanHeaderPress = () => {
+    if (hasActivePlan) {
+      openPlanModalViewPlan();
+    } else {
+      openPlanModal();
+    }
+  };
+
+  const endPlanFromModal = () => {
+    setActivePlan(null);
+    closePlanModal();
+  };
+
+  const planHeaderButton = (
+    <TouchableOpacity
+      onPress={onPlanHeaderPress}
+      style={[styles.planHeaderBtn, hasActivePlan && styles.planHeaderBtnActive]}
+      accessibilityLabel={hasActivePlan ? 'Active plan' : 'View plan'}
+      accessibilityRole="button"
+    >
+      {hasActivePlan ? (
+        <View style={styles.planStarBtnInnerWrap}>
+          <Animated.View style={{ opacity: glowAnim }}>
+            <Ionicons name="navigate" size={24} color={PLAN_STAR_ORANGE} />
+          </Animated.View>
+          <Text style={[styles.planStarLabel, { color: PLAN_STAR_ORANGE }]}>Active plan</Text>
+        </View>
+      ) : (
+        <Ionicons name="navigate" size={24} color={colors.textMuted} />
+      )}
+    </TouchableOpacity>
+  );
 
   useEffect(() => {
     if (viewMode !== 'map') {
@@ -151,7 +289,7 @@ export function MapScreen() {
   if (loadError) {
     return (
       <View style={styles.container}>
-        <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} />
+        <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} centerElement={planHeaderButton} />
         <Text style={styles.error}>{loadError}</Text>
       </View>
     );
@@ -159,7 +297,7 @@ export function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} />
+      <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} centerElement={planHeaderButton} />
       {viewMode === 'list' ? (
         <View style={styles.listWrap}>
           <TextInput
@@ -190,73 +328,148 @@ export function MapScreen() {
               </View>
             )}
           </View>
-          <View style={styles.panel}>
-            <ScrollView style={styles.panelScroll} contentContainerStyle={styles.panelContent}>
-            <Text style={styles.panelLabel}>Starting location</Text>
-            <TextInput
-              style={styles.input}
-              value={startLocation}
-              onChangeText={setStartLocation}
-              placeholder="e.g. Home"
-              placeholderTextColor={colors.placeholder}
-            />
-            <Text style={styles.panelLabel}>I'm feeling...</Text>
-            <View style={styles.chipRow}>
-              {FEELING_OPTIONS.map((f) => (
-                <TouchableOpacity
-                  key={f}
-                  style={[styles.chip, feeling === f && styles.chipActive]}
-                  onPress={() => setFeeling(feeling === f ? null : f)}
-                >
-                  <Text style={[styles.chipText, feeling === f && styles.chipTextActive]}>{f}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.panelLabel}>Budget</Text>
-            <View style={styles.chipRow}>
-              {BUDGET_OPTIONS.map((b) => (
-                <TouchableOpacity
-                  key={b}
-                  style={[styles.chip, budget === b && styles.chipActive]}
-                  onPress={() => setBudget(budget === b ? null : b)}
-                >
-                  <Text style={[styles.chipText, budget === b && styles.chipTextActive]}>{b}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.panelLabel}>Hours outside: {hoursOutside}</Text>
-            <View style={styles.sliderRow}>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((h) => (
-                <TouchableOpacity
-                  key={h}
-                  style={[styles.sliderDot, hoursOutside === h && styles.sliderDotActive]}
-                  onPress={() => setHoursOutside(h)}
-                />
-              ))}
-            </View>
-            <TouchableOpacity style={styles.generateBtn} onPress={onGenerate} disabled={phase === 'loading'}>
-              <Text style={styles.generateBtnText}>Generate</Text>
+          {!hasActivePlan && (
+            <TouchableOpacity style={styles.fab} onPress={openPlanModal} accessibilityLabel="Plan my day" accessibilityRole="button">
+              <Ionicons name="navigate" size={24} color={colors.white} />
+              <Text style={styles.fabLabel}>Plan my day</Text>
             </TouchableOpacity>
-          </ScrollView>
-          </View>
+          )}
         </View>
       )}
-      {phase === 'loading' && (
-        <View style={styles.overlay}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={styles.overlayText}>Finding ideas…</Text>
-        </View>
-      )}
-      {phase === 'result' && (
-        <View style={styles.resultPanel}>
-          <Text style={styles.resultTitle}>Your plan</Text>
-          <Text style={styles.resultTime}>Current time: {resultTime}</Text>
-          <Text style={styles.resultWeather}>Next 6 hours: {mockWeather.map((t) => `${t}°F`).join(', ')}</Text>
-          <TouchableOpacity style={styles.resultClose} onPress={() => setPhase('idle')}>
-            <Text style={styles.resultCloseText}>Close</Text>
+      <Modal visible={planModalVisible} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closePlanModal}>
+          <TouchableOpacity style={styles.modalCard} activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {planModalMode === 'viewPlan' ? 'Your plan' : generatedOptions ? 'Choose a plan' : 'Plan your day'}
+              </Text>
+              <TouchableOpacity onPress={closePlanModal} style={styles.modalClose} hitSlop={12}>
+                <Ionicons name="close" size={24} color={colors.black} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
+              {planModalMode === 'viewPlan' ? (
+                <>
+                  <Text style={styles.sheetTitle}>{state.plan.activePlan?.name || 'Your route'}</Text>
+                  {planPlaces.map((place, index) => (
+                    <View key={place.id} style={styles.stepRow}>
+                      <View style={styles.stepNum}>
+                        <Text style={styles.stepNumText}>{index + 1}</Text>
+                      </View>
+                      <View style={styles.stepInfo}>
+                        <Text style={styles.stepName}>{place.name}</Text>
+                        <Text style={styles.stepCategory}>{place.category}</Text>
+                      </View>
+                    </View>
+                  ))}
+                  <TouchableOpacity style={styles.endPlanBtn} onPress={endPlanFromModal}>
+                    <Text style={styles.endPlanBtnText}>End plan</Text>
+                  </TouchableOpacity>
+                </>
+              ) : generatedOptions ? (
+                <>
+                  <Text style={styles.modalRowLabel}>Cross out options you don't want, then Accept</Text>
+                  {generatedOptions.map((option, index) => {
+                    const crossedOut = crossedOutIndices.has(index);
+                    const placeNames = (option.placeIds || [])
+                      .map((id) => DEMO_PLACES.find((p) => p.id === id)?.name)
+                      .filter(Boolean)
+                      .join(' → ');
+                    return (
+                      <View key={index} style={[styles.optionRow, crossedOut && styles.optionRowCrossedOut]}>
+                        <View style={styles.optionRowLeft}>
+                          <View style={styles.optionCircle} />
+                          <View style={styles.optionRowText}>
+                            <Text style={[styles.optionName, crossedOut && styles.optionTextCrossedOut]} numberOfLines={1}>
+                              {option.name || `Option ${index + 1}`}
+                            </Text>
+                            <Text style={[styles.optionStops, crossedOut && styles.optionTextCrossedOut]} numberOfLines={1}>
+                              {option.placeIds?.length ?? 0} stops{placeNames ? ` · ${placeNames}` : ''}
+                            </Text>
+                          </View>
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => toggleCrossOut(index)}
+                          style={styles.optionCrossOut}
+                          hitSlop={12}
+                          accessibilityLabel={crossedOut ? 'Restore option' : 'Cross out option'}
+                        >
+                          <Ionicons name="close-circle" size={24} color={crossedOut ? colors.textMuted : colors.black} />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                  <TouchableOpacity
+                    style={[styles.generateBtn, visibleOptions.length === 0 && styles.acceptDisabled]}
+                    onPress={onAcceptPlan}
+                    disabled={visibleOptions.length === 0}
+                  >
+                    <Text style={styles.generateBtnText}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.tryAgainBtn} onPress={onTryAgain}>
+                    <Text style={styles.tryAgainBtnText}>Try again</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.cancelPlanBtn} onPress={closePlanModal}>
+                    <Text style={styles.cancelPlanBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.modalRowLabel}>Starting location</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={startLocation}
+                    onChangeText={setStartLocation}
+                    placeholder="e.g. Home"
+                    placeholderTextColor={colors.placeholder}
+                  />
+                  <Text style={styles.modalRowLabel}>Vibe</Text>
+                  <View style={styles.chipRow}>
+                    {FEELING_OPTIONS.map((f) => (
+                      <TouchableOpacity
+                        key={f}
+                        style={[styles.chip, feeling === f && styles.chipActive]}
+                        onPress={() => setFeeling(feeling === f ? null : f)}
+                      >
+                        <Text style={[styles.chipText, feeling === f && styles.chipTextActive]}>{f}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <Text style={styles.modalRowLabel}>Budget</Text>
+                  <View style={styles.chipRow}>
+                    {BUDGET_OPTIONS.map((b) => (
+                      <TouchableOpacity
+                        key={b}
+                        style={[styles.chip, budget === b && styles.chipActive]}
+                        onPress={() => setBudget(budget === b ? null : b)}
+                      >
+                        <Text style={[styles.chipText, budget === b && styles.chipTextActive]}>{b}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <Text style={styles.modalRowLabel}>Hours outside: {hoursOutside}</Text>
+                  <View style={styles.sliderRow}>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((h) => (
+                      <TouchableOpacity
+                        key={h}
+                        style={[styles.sliderDot, hoursOutside === h && styles.sliderDotActive]}
+                        onPress={() => setHoursOutside(h)}
+                      />
+                    ))}
+                  </View>
+                  <TouchableOpacity style={styles.generateBtn} onPress={onGenerate} disabled={generating}>
+                    {generating ? (
+                      <ActivityIndicator color={colors.white} />
+                    ) : (
+                      <Text style={styles.generateBtnText}>Generate</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              )}
+            </ScrollView>
           </TouchableOpacity>
-        </View>
-      )}
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -278,7 +491,7 @@ const styles = StyleSheet.create({
   },
   listScroll: { flex: 1 },
   listContent: { padding: 16, paddingBottom: 24 },
-  main: { flex: 1, flexDirection: 'row' },
+  main: { flex: 1, flexDirection: 'row', position: 'relative' },
   mapWrap: { flex: 1, minWidth: 300, position: 'relative' },
   mapDiv: {
     width: '100%',
@@ -297,17 +510,64 @@ const styles = StyleSheet.create({
   },
   loadingText: { fontSize: 16, color: colors.textMuted },
   error: { padding: 16, color: colors.accent, fontSize: 16 },
-  panel: {
-    width: 320,
-    backgroundColor: colors.white,
-    borderLeftWidth: 1,
-    borderLeftColor: colors.border,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+  planHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
   },
-  panelScroll: { flex: 1 },
-  panelContent: { paddingBottom: 24 },
-  panelLabel: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 8, marginTop: 4 },
+  planHeaderBtnActive: {},
+  planStarBtnInnerWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  planStarLabel: { fontSize: 12, fontWeight: '600' },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    left: '50%',
+    marginLeft: -80,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.accent,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 28,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  fabLabel: { fontSize: 16, fontWeight: '700', color: colors.white },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '70%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: colors.black },
+  modalClose: { padding: 4 },
+  modalScroll: { maxHeight: 400 },
+  modalContent: { padding: 20, paddingBottom: 28 },
+  modalRowLabel: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 8, marginTop: 12 },
   input: {
     backgroundColor: colors.background,
     borderRadius: 10,
@@ -326,39 +586,71 @@ const styles = StyleSheet.create({
   sliderDotActive: { backgroundColor: colors.accent },
   generateBtn: {
     backgroundColor: colors.accent,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  generateBtnText: { fontSize: 18, fontWeight: '700', color: colors.white },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    marginBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  optionRowCrossedOut: { opacity: 0.5 },
+  optionRowLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 },
+  optionCircle: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    marginRight: 12,
+  },
+  optionRowText: { flex: 1, minWidth: 0 },
+  optionName: { fontSize: 16, fontWeight: '700', color: colors.black, marginBottom: 2 },
+  optionStops: { fontSize: 13, color: colors.textMuted },
+  optionTextCrossedOut: { textDecorationLine: 'line-through', color: colors.textMuted },
+  optionCrossOut: { padding: 4 },
+  acceptDisabled: { opacity: 0.5 },
+  tryAgainBtn: {
+    paddingVertical: 12,
     alignItems: 'center',
     marginTop: 8,
   },
-  generateBtnText: { fontSize: 18, fontWeight: '700', color: colors.white },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.overlay,
-    justifyContent: 'center',
+  tryAgainBtnText: { fontSize: 16, fontWeight: '600', color: colors.accent },
+  cancelPlanBtn: {
+    paddingVertical: 10,
     alignItems: 'center',
+    marginTop: 4,
   },
-  overlayText: { color: colors.white, fontSize: 16, marginTop: 12 },
-  resultPanel: {
-    position: 'absolute',
-    left: 24,
-    bottom: 24,
-    right: 340,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+  cancelPlanBtnText: { fontSize: 15, color: colors.textMuted },
+  sheetTitle: { fontSize: 18, fontWeight: '700', color: colors.black, marginBottom: 16 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+  stepNum: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  resultTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  resultTime: { fontSize: 15, color: colors.black, marginBottom: 4 },
-  resultWeather: { fontSize: 14, color: colors.textMuted, marginBottom: 16 },
-  resultClose: { alignSelf: 'flex-end' },
-  resultCloseText: { color: colors.accent, fontWeight: '600' },
+  stepNumText: { fontSize: 14, fontWeight: '700', color: colors.white },
+  stepInfo: { flex: 1 },
+  stepName: { fontSize: 16, fontWeight: '600', color: colors.black },
+  stepCategory: { fontSize: 13, color: colors.textMuted },
+  endPlanBtn: {
+    marginTop: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: colors.border,
+  },
+  endPlanBtnText: { fontSize: 16, fontWeight: '600', color: colors.black },
 });

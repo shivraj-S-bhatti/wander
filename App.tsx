@@ -10,11 +10,12 @@ import { useAppSelector } from './src/state/reduxStore';
 import { StoreProvider } from './src/state/store';
 import { AuthHydration } from './src/state/AuthHydration';
 import { colors } from './src/theme';
-import { MakePostScreen } from './src/screens/MakePostScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { CommunityScreen } from './src/screens/CommunityScreen';
+import { MakePostScreen } from './src/screens/MakePostScreen';
 import { FriendsScreen } from './src/screens/FriendsScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { ItineraryScreen } from './src/screens/ItineraryScreen';
 import { PlaceDetailScreen } from './src/screens/PlaceDetailScreen';
 import { ProfileDetailScreen } from './src/screens/ProfileDetailScreen';
 import { LeaderboardScreen } from './src/screens/LeaderboardScreen';
@@ -28,6 +29,7 @@ export type RootStackParamList = {
   PlaceDetail: { placeId: string };
   ProfileDetail: { userId: string; username?: string };
   Leaderboard: undefined;
+  Itinerary: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -65,7 +67,7 @@ function MainTabs() {
         component={MakePostScreen}
         options={{
           tabBarLabel: 'Post',
-          tabBarIcon: ({ color, size }) => <Ionicons name="add" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size} color={color} />,
         }}
       />
       <Tab.Screen
@@ -112,6 +114,11 @@ function RootNavigator() {
         name="Leaderboard"
         component={LeaderboardScreen}
         options={{ title: 'Leaderboard' }}
+      />
+      <Stack.Screen
+        name="Itinerary"
+        component={ItineraryScreen}
+        options={{ title: 'Your plan' }}
       />
     </Stack.Navigator>
   );

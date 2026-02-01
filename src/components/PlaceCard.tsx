@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { Place } from '../data/demo';
 import { colors } from '../theme';
 
@@ -11,13 +11,21 @@ type Props = {
 
 export function PlaceCard({ place, onPress, elevated }: Props) {
   const price = '$'.repeat(place.priceTier);
-  return (
-    <View style={[styles.card, elevated && styles.cardElevated]} onTouchEnd={onPress}>
+  const content = (
+    <>
       <Text style={styles.name}>{place.name}</Text>
       <Text style={styles.meta}>{place.category} · {place.tags.slice(0, 3).join(', ')}</Text>
       <Text style={styles.price}>{price}</Text>
-    </View>
+    </>
   );
+  if (onPress) {
+    return (
+      <TouchableOpacity style={[styles.card, elevated && styles.cardElevated]} onPress={onPress} activeOpacity={0.7}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+  return <View style={[styles.card, elevated && styles.cardElevated]}>{content}</View>;
 }
 
 const styles = StyleSheet.create({

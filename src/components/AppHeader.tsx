@@ -14,21 +14,26 @@ type Props = {
   subtitle?: string;
   /** Optional element on the right side of the header (e.g. bell icon for friend requests) */
   rightElement?: React.ReactNode;
+  /** Optional element in the center of the header (e.g. plan star button) */
+  centerElement?: React.ReactNode;
 };
 
-export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement }: Props) {
+export function AppHeader({ viewMode, onViewModeChange, subtitle, rightElement, centerElement }: Props) {
   const showToggle = viewMode != null && onViewModeChange != null;
 
   return (
     <View style={styles.container}>
       <View style={styles.row}>
         <Image source={logoSource} style={styles.logo} resizeMode="contain" accessibilityLabel="Wander" />
-        {subtitle != null ? (
+        {subtitle != null && centerElement == null ? (
           <View style={styles.subtitleWrap}>
             <Text style={styles.subtitle} numberOfLines={1}>
               {subtitle}
             </Text>
           </View>
+        ) : null}
+        {centerElement != null ? (
+          <View style={styles.centerWrap}>{centerElement}</View>
         ) : null}
         {rightElement != null ? (
           <View style={styles.rightElement}>{rightElement}</View>
@@ -96,6 +101,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+  },
+  centerWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 0,
   },
   subtitle: {
     fontSize: 14,

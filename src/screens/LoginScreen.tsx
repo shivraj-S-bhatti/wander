@@ -66,6 +66,7 @@ export function LoginScreen() {
               resizeMode="contain"
               accessibilityLabel="Wander"
             />
+            <Text style={styles.tagline}>Fall in love with your city.{'\n'}Build your communities.</Text>
             <TextInput
               style={styles.input}
               value={email}
@@ -140,7 +141,15 @@ const styles = StyleSheet.create({
     width: 220,
     height: 56,
     alignSelf: 'center',
-    marginBottom: 28,
+    marginBottom: 12,
+  },
+  tagline: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 16,
   },
   input: {
     backgroundColor: colors.white,

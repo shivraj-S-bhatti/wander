@@ -6,3 +6,4 @@ export const GOOGLE_DIRECTIONS_API_KEY =
 export const PROXY_BASE = process.env.EXPO_PUBLIC_PROXY_BASE || '';
 // Backend API base for auth and other API calls. Optional; defaults to localhost:3000.
 export const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+export const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_KEY || '';

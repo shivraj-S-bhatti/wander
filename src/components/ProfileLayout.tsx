@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import { CURRENT_USER_ID, DEMO_USERS } from '../data/demo';
+import { CURRENT_USER_ID, DEMO_PLACES, DEMO_USERS } from '../data/demo';
 import type { Post } from '../data/demo';
 import { clearStoredAuth } from '../services/authStorage';
 import * as friendRequestsApi from '../services/friendRequests';
@@ -20,6 +20,7 @@ import { useStore } from '../state/store';
 import { useAppDispatch } from '../state/reduxStore';
 import { logout } from '../state/authSlice';
 import type { RootState } from '../state/reduxStore';
+import { PlaceCard } from './PlaceCard';
 import { colors } from '../theme';
 import { getFaceSource } from '../utils/avatarFaces';
 import { ActivityHeatmap } from './ProfileFeed';
@@ -43,7 +44,8 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
   const authUser = useSelector((s: RootState) => s.auth.user);
   const myFriendIds = useSelector((s: RootState) => s.auth.user?.friends ?? []);
   const isAlreadyFriend = myFriendIds.includes(userId);
-  const { state, getBadges, getLevel, getStreak, getNextBadgeProgress } = useStore();
+  const { state, getBadges, getLevel, getStreak, getNextBadgeProgress, setPrefs, refreshRecs } = useStore();
+  const { loadingRecs, recsError, lastGeminiRecs } = state.profile;
   const [sendingRequest, setSendingRequest] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
 
@@ -167,11 +169,75 @@ export function ProfileLayout({ userId, isOwnProfile, displayName }: Props) {
         <Text style={styles.categoryCount}>0</Text>
         <Text style={styles.categoryChevron}>{'>'}</Text>
       </View>
-      <View style={styles.categoryRow}>
-        <Text style={styles.categoryIcon}>♥</Text>
-        <Text style={styles.categoryLabel}>Recs for You</Text>
-        <Text style={styles.categoryChevron}>{'>'}</Text>
-      </View>
+      {isOwnProfile && (
+        <>
+          <View style={styles.preferencesSection}>
+            <Text style={styles.preferencesTitle}>Preferences</Text>
+            <View style={styles.chipRow}>
+              <Text style={styles.chipLabel}>Vibe</Text>
+              {(['chill', 'party', 'quiet', 'outdoors'] as const).map((v) => (
+                <TouchableOpacity
+                  key={v}
+                  style={[styles.chip, state.profile.prefs.vibe === v && styles.chipSelected]}
+                  onPress={() => setPrefs({ vibe: state.profile.prefs.vibe === v ? undefined : v })}
+                >
+                  <Text style={[styles.chipText, state.profile.prefs.vibe === v && styles.chipTextSelected]}>{v}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.chipRow}>
+              <Text style={styles.chipLabel}>Budget</Text>
+              {(['low', 'med', 'high'] as const).map((b) => (
+                <TouchableOpacity
+                  key={b}
+                  style={[styles.chip, state.profile.prefs.budget === b && styles.chipSelected]}
+                  onPress={() => setPrefs({ budget: state.profile.prefs.budget === b ? undefined : b })}
+                >
+                  <Text style={[styles.chipText, state.profile.prefs.budget === b && styles.chipTextSelected]}>{b}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.recsSection}>
+            <View style={styles.recsHeader}>
+              <Text style={styles.recsTitle}>Recs for You</Text>
+              <TouchableOpacity
+                style={[styles.recsButton, loadingRecs && styles.recsButtonDisabled]}
+                onPress={() => refreshRecs()}
+                disabled={loadingRecs}
+              >
+                <Text style={styles.recsButtonText}>{lastGeminiRecs ? 'Refresh' : 'Get recommendations'}</Text>
+              </TouchableOpacity>
+            </View>
+            {loadingRecs && <Text style={styles.recsStatus}>Loading…</Text>}
+            {recsError && !loadingRecs && <Text style={styles.recsError}>{recsError}</Text>}
+            {!loadingRecs && lastGeminiRecs && lastGeminiRecs.length > 0 && (
+              <View style={styles.recsList}>
+                {lastGeminiRecs.map((rec) => {
+                  const place = DEMO_PLACES.find((p) => p.id === rec.placeId);
+                  if (!place) return null;
+                  return (
+                    <TouchableOpacity
+                      key={rec.placeId}
+                      activeOpacity={0.7}
+                      onPress={() => (navigation.getParent() as { navigate: (a: string, b: { placeId: string }) => void })?.navigate('PlaceDetail', { placeId: place.id })}
+                    >
+                      <View style={styles.recCard}>
+                        <PlaceCard place={place} elevated />
+                        <Text style={styles.recReason}>{rec.reason}</Text>
+                        <Text style={styles.recTime}>Suggested: {rec.suggestedTime}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+            {!loadingRecs && !lastGeminiRecs?.length && !recsError && (
+              <Text style={styles.recsHint}>Tap “Get recommendations” to see AI suggestions based on your preferences and friends.</Text>
+            )}
+          </View>
+        </>
+      )}
       <View style={styles.cardsRow}>
         <View style={styles.gamificationCard}>
           <Text style={styles.cardIcon}>🏆</Text>
@@ -372,6 +438,55 @@ const styles = StyleSheet.create({
   badgeIcon: { marginRight: 6 },
   badgeText: { fontSize: 12, color: colors.textMuted },
   badgeTextUnlocked: { color: colors.black, fontWeight: '700' },
+  preferencesSection: {
+    backgroundColor: colors.white,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  preferencesTitle: { fontSize: 14, fontWeight: '600', color: colors.black, marginBottom: 12 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 },
+  chipLabel: { fontSize: 12, color: colors.textMuted, marginRight: 8, marginBottom: 6, width: 48 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    marginRight: 8,
+    marginBottom: 6,
+  },
+  chipSelected: { backgroundColor: colors.accent },
+  chipText: { fontSize: 13, color: colors.black },
+  chipTextSelected: { color: colors.white, fontWeight: '600' },
+  recsSection: {
+    backgroundColor: colors.white,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  recsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 },
+  recsTitle: { fontSize: 16, fontWeight: '700', color: colors.black },
+  recsButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.accent,
+  },
+  recsButtonDisabled: { opacity: 0.6 },
+  recsButtonText: { fontSize: 13, fontWeight: '600', color: colors.white },
+  recsStatus: { fontSize: 13, color: colors.textMuted, marginBottom: 8 },
+  recsError: { fontSize: 12, color: colors.warning ?? '#b8860b', marginBottom: 8 },
+  recsList: { gap: 12 },
+  recCard: { marginBottom: 12 },
+  recReason: { fontSize: 12, color: colors.textMuted, marginTop: 6, marginLeft: 4 },
+  recTime: { fontSize: 11, color: colors.textMuted, marginTop: 2, marginLeft: 4 },
+  recsHint: { fontSize: 12, color: colors.textMuted },
   logoutRow: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 32, alignItems: 'center' },
   logoutButton: {
     backgroundColor: colors.accent,
