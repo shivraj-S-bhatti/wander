@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { AppHeader } from '../components/AppHeader';
+import { PlaceCard } from '../components/PlaceCard';
 import { DEMO_EVENTS, DEMO_MAP_CENTER, DEMO_PLACES } from '../data/demo';
 import { GOOGLE_MAPS_API_KEY } from '../config';
 import { colors } from '../theme';
@@ -44,9 +45,10 @@ export function MapScreen() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<GoogleMapInstance | null>(null);
   const markersRef = useRef<GoogleMarkerInstance[]>([]);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
+  const [listSearch, setListSearch] = useState('');
   const [mapReady, setMapReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [city, setCity] = useState('Boston');
   const [startLocation, setStartLocation] = useState('');
   const [feeling, setFeeling] = useState<string | null>(null);
   const [budget, setBudget] = useState<string | null>(null);
@@ -59,6 +61,15 @@ export function MapScreen() {
   };
   const resultTime = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   const mockWeather = [72, 70, 68, 65, 64, 63];
+
+  const listPlaces = listSearch.trim()
+    ? DEMO_PLACES.filter(
+        (p) =>
+          p.name.toLowerCase().includes(listSearch.trim().toLowerCase()) ||
+          p.category.toLowerCase().includes(listSearch.trim().toLowerCase()) ||
+          p.tags.some((t) => t.toLowerCase().includes(listSearch.trim().toLowerCase()))
+      )
+    : DEMO_PLACES;
 
   useEffect(() => {
     if (!mapRef.current || !GOOGLE_MAPS_API_KEY) {
@@ -127,7 +138,7 @@ export function MapScreen() {
   if (loadError) {
     return (
       <View style={styles.container}>
-        <AppHeader showCityInput city={city} onCityChange={setCity} />
+        <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} />
         <Text style={styles.error}>{loadError}</Text>
       </View>
     );
@@ -135,18 +146,39 @@ export function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader showCityInput city={city} onCityChange={setCity} />
-      <View style={styles.main}>
-        <View style={styles.mapWrap}>
-          <div ref={mapRef} style={styles.mapDiv} />
-          {!mapReady && (
-            <View style={styles.loading}>
-              <Text style={styles.loadingText}>Loading map…</Text>
-            </View>
-          )}
+      <AppHeader viewMode={viewMode} onViewModeChange={setViewMode} />
+      {viewMode === 'list' ? (
+        <View style={styles.listWrap}>
+          <TextInput
+            style={styles.listSearchInput}
+            value={listSearch}
+            onChangeText={setListSearch}
+            placeholder="Search places..."
+            placeholderTextColor={colors.placeholder}
+          />
+          <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
+            {listPlaces.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onPress={() => nav.navigate('PlaceDetail' as never, { placeId: place.id } as never)}
+                elevated
+              />
+            ))}
+          </ScrollView>
         </View>
-        <View style={styles.panel}>
-          <ScrollView style={styles.panelScroll} contentContainerStyle={styles.panelContent}>
+      ) : (
+        <View style={styles.main}>
+          <View style={styles.mapWrap}>
+            <div ref={mapRef} style={styles.mapDiv} />
+            {!mapReady && (
+              <View style={styles.loading}>
+                <Text style={styles.loadingText}>Loading map…</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.panel}>
+            <ScrollView style={styles.panelScroll} contentContainerStyle={styles.panelContent}>
             <Text style={styles.panelLabel}>Starting location</Text>
             <TextInput
               style={styles.input}
@@ -193,8 +225,9 @@ export function MapScreen() {
               <Text style={styles.generateBtnText}>Generate</Text>
             </TouchableOpacity>
           </ScrollView>
+          </View>
         </View>
-      </View>
+      )}
       {phase === 'loading' && (
         <View style={styles.overlay}>
           <ActivityIndicator size="large" color={colors.accent} />
@@ -217,6 +250,21 @@ export function MapScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: '100%', backgroundColor: colors.background },
+  listWrap: { flex: 1 },
+  listSearchInput: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  listScroll: { flex: 1 },
+  listContent: { padding: 16, paddingBottom: 24 },
   main: { flex: 1, flexDirection: 'row' },
   mapWrap: { flex: 1, minWidth: 300, position: 'relative' },
   mapDiv: {

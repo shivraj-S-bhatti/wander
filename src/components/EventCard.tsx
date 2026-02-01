@@ -17,11 +17,12 @@ type Props = {
   event: Event;
   joined: boolean;
   onJoin: () => void;
+  elevated?: boolean;
 };
 
-export function EventCard({ event, joined, onJoin }: Props) {
+export function EventCard({ event, joined, onJoin, elevated }: Props) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, elevated && styles.cardElevated]}>
       <Text style={styles.title}>{event.title}</Text>
       <Text style={styles.desc}>{event.description}</Text>
       <Text style={styles.meta}>
@@ -52,6 +53,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+  },
+  cardElevated: {
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
   },
   title: { fontWeight: '700', fontSize: 16, marginBottom: 6 },
   desc: { fontSize: 14, color: colors.textMuted, marginBottom: 8 },

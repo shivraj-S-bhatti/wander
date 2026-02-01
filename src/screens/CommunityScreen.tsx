@@ -28,6 +28,7 @@ export function CommunityScreen() {
             event={item}
             joined={item.joinedUserIds.includes('u_me')}
             onJoin={() => handleJoin(item.id, item.pointsReward)}
+            elevated
           />
         )}
         contentContainerStyle={styles.list}
