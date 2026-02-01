@@ -1,14 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppHeader } from '../components/AppHeader';
+import { PlanHeaderButton } from '../components/PlanHeaderButton';
 import { VolunteerCard } from '../components/VolunteerCard';
 import { CommunityFeedCard } from '../components/CommunityFeedCard';
 import { PostCard } from '../components/PostCard';
 import { useStore } from '../state/store';
-import { DEMO_CHECKINS, DEMO_PLACES, DEMO_USERS } from '../data/demo';
+import { CURRENT_USER_ID, DEMO_CHECKINS, DEMO_PLACES, DEMO_USERS } from '../data/demo';
 import { getFeedImage } from '../utils/feedImages';
 import { colors } from '../theme';
 import type { RootStackParamList } from '../../App';
@@ -22,10 +23,27 @@ type FeedItem =
 
 export function CommunityScreen() {
   const navigation = useNavigation<CommunityNavProp>();
-  const { state, joinEvent, addDemoFriend } = useStore();
+  const { state, joinEvent, addDemoFriend, setOpenPlanModal, setPendingEventId } = useStore();
   const events = state.events;
   const demoFriendIds = state?.demoFriendIds ?? [];
   const [pointsToast, setPointsToast] = useState<number | null>(null);
+  const hasActivePlan = state.plan.activePlan != null;
+  const onPlanHeaderPress = useCallback(() => setOpenPlanModal(true), [setOpenPlanModal]);
+  const handleJoin = useCallback(
+    (eventId: string, pointsReward: number) => {
+      joinEvent(eventId);
+      setPointsToast(pointsReward);
+      setTimeout(() => setPointsToast(null), 2000);
+    },
+    [joinEvent]
+  );
+  const handleVolunteerPress = useCallback(
+    (event: { id: string }) => {
+      setPendingEventId(event.id);
+      setOpenPlanModal(true);
+    },
+    [setPendingEventId, setOpenPlanModal]
+  );
 
   const feedItems: FeedItem[] = useMemo(() => {
     const checkinItems: FeedItem[] = DEMO_CHECKINS.map((c) => ({
@@ -34,20 +52,16 @@ export function CommunityScreen() {
       ts: c.ts,
       data: c,
     }));
-    const postItems: FeedItem[] = state.posts.map((p) => ({
-      type: 'post' as const,
-      id: p.id,
-      ts: p.ts,
-      data: p,
-    }));
+    const postItems: FeedItem[] = state.posts
+      .filter((p) => p.userId !== CURRENT_USER_ID)
+      .map((p) => ({
+        type: 'post' as const,
+        id: p.id,
+        ts: p.ts,
+        data: p,
+      }));
     return [...checkinItems, ...postItems].sort((a, b) => b.ts - a.ts);
   }, [state.posts]);
-
-  const handleJoin = (eventId: string, pointsReward: number) => {
-    joinEvent(eventId);
-    setPointsToast(pointsReward);
-    setTimeout(() => setPointsToast(null), 2500);
-  };
 
   const openLeaderboard = () => {
     navigation.navigate('Leaderboard');
@@ -89,10 +103,14 @@ export function CommunityScreen() {
     );
   };
 
+  const planHeaderButton = (
+    <PlanHeaderButton hasActivePlan={hasActivePlan} onPress={onPlanHeaderPress} />
+  );
+
   const ListHeader = useMemo(
     () => (
       <>
-        <AppHeader />
+        <AppHeader centerElement={planHeaderButton} />
         <Text style={styles.sectionTitle}>Volunteer!</Text>
         <ScrollView
           horizontal
@@ -105,13 +123,14 @@ export function CommunityScreen() {
               event={item}
               joined={item.joinedUserIds.includes('u_me')}
               onJoin={() => handleJoin(item.id, item.pointsReward)}
+              onPress={() => handleVolunteerPress(item)}
             />
           ))}
         </ScrollView>
         <Text style={styles.sectionTitle}>Your Feed</Text>
       </>
     ),
-    [events]
+    [events, hasActivePlan, planHeaderButton, handleJoin, handleVolunteerPress]
   );
 
   return (

@@ -22,6 +22,7 @@ import { ProfileDetailScreen } from './src/screens/ProfileDetailScreen';
 import { LeaderboardScreen } from './src/screens/LeaderboardScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { SignupScreen } from './src/screens/SignupScreen';
+import { PlanModal } from './src/components/PlanModal';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -40,6 +41,7 @@ function MainTabs() {
   const insets = useSafeAreaInsets();
   const tabBarPaddingBottom = insets.bottom + 8;
   return (
+    <>
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: colors.accent,
@@ -90,6 +92,8 @@ function MainTabs() {
         }}
       />
     </Tab.Navigator>
+    <PlanModal />
+    </>
   );
 }
 

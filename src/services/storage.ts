@@ -54,7 +54,7 @@ export async function savePosts(posts: StoredPost[]): Promise<void> {
   await AsyncStorage.setItem(KEY_POSTS, JSON.stringify(posts));
 }
 
-export type StoredPlan = { placeIds: string[]; name?: string } | null;
+export type StoredPlan = { placeIds: string[]; name?: string; eventIds?: string[] } | null;
 
 export async function loadPlan(): Promise<StoredPlan> {
   try {
@@ -62,7 +62,8 @@ export async function loadPlan(): Promise<StoredPlan> {
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!Array.isArray(data?.placeIds)) return null;
-    return { placeIds: data.placeIds, name: data.name };
+    const eventIds = Array.isArray(data.eventIds) ? data.eventIds : undefined;
+    return { placeIds: data.placeIds, name: data.name, eventIds };
   } catch {
     return null;
   }

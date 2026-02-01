@@ -10,6 +10,8 @@ export type Place = {
   priceTier: 1 | 2 | 3 | 4;
   tags: string[];
   isLocalBusiness?: boolean;
+  /** Average rating 1–5 for display (e.g. from reviews) */
+  averageRating?: number;
 };
 /** Pro-community badges e.g. Local business, Volunteer, Organized hangout */
 export type CheckinBadge = 'Local business' | 'Volunteer' | 'Organized hangout' | 'Public transport';
@@ -76,7 +78,7 @@ export const DEMO_ORIGIN = { lat: 37.7812, lng: -122.4112 };
 export const DEMO_MAP_CENTER = { lat: 37.7849, lng: -122.4094 };
 
 export const DEMO_USERS: User[] = [
-  { id: 'u_me', name: 'You', avatar: 'guy4' },
+  { id: 'u_me', name: 'Jordan Lee', avatar: 'guy4', handle: '@jordan_lee_2' },
   { id: 'u_1', name: 'Alex', avatar: 'guy1' },
   { id: 'u_2', name: 'Sam', avatar: 'guy2' },
   { id: 'u_3', name: 'Jordan', avatar: 'guy3' },

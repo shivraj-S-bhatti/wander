@@ -45,16 +45,26 @@ type ProfileState = {
   recsError: string | null;
 };
 
-export type ActivePlan = { placeIds: string[]; name?: string };
+export type ActivePlan = { placeIds: string[]; name?: string; eventIds?: string[] };
 
 type PlanState = {
   activePlan: ActivePlan | null;
   openPlanModal: boolean;
+  pendingEventId: string | null;
+};
+
+type CityState = {
+  selectedCityId: string;
 };
 
 const defaultPlan: PlanState = {
   activePlan: null,
   openPlanModal: false,
+  pendingEventId: null,
+};
+
+const defaultCity: CityState = {
+  selectedCityId: 'san_francisco',
 };
 
 const defaultProfile: ProfileState = {
@@ -72,6 +82,7 @@ const defaultProfile: ProfileState = {
 type AppState = {
   profile: ProfileState;
   plan: PlanState;
+  city: CityState;
   events: Event[];
   posts: Post[];
   demoFriendIds: string[];
@@ -96,7 +107,8 @@ type Action =
   | { type: 'LOAD_PLAN'; payload: ActivePlan | null }
   | { type: 'ADD_DEMO_FRIEND'; payload: string }
   | { type: 'REMOVE_DEMO_FRIEND'; payload: string }
-  | { type: 'LOAD_DEMO_FRIENDS'; payload: string[] };
+  | { type: 'LOAD_DEMO_FRIENDS'; payload: string[] }
+  | { type: 'SET_SELECTED_CITY'; payload: string };
 
 function profileReducer(state: ProfileState, action: Action): ProfileState {
   switch (action.type) {
@@ -165,14 +177,31 @@ function planReducer(state: PlanState, action: Action): PlanState {
     case 'LOAD_PLAN':
       return { ...state, activePlan: action.payload };
     case 'SET_ACTIVE_PLAN':
-      return { ...state, activePlan: action.payload };
+      return { ...state, activePlan: action.payload, pendingEventId: null };
     case 'CLEAR_ACTIVE_PLAN':
       return { ...state, activePlan: null };
     case 'SET_OPEN_PLAN_MODAL':
       return { ...state, openPlanModal: action.payload };
+    case 'ADD_EVENT_TO_PLAN': {
+      const plan = state.activePlan;
+      if (!plan) return state;
+      const eventIds = plan.eventIds ?? [];
+      if (eventIds.includes(action.payload)) return state;
+      return {
+        ...state,
+        activePlan: { ...plan, eventIds: [...eventIds, action.payload] },
+      };
+    }
+    case 'SET_PENDING_EVENT':
+      return { ...state, pendingEventId: action.payload };
     default:
       return state;
   }
+}
+
+function cityReducer(state: CityState, action: Action): CityState {
+  if (action.type === 'SET_SELECTED_CITY') return { ...state, selectedCityId: action.payload };
+  return state;
 }
 
 function eventsReducer(state: Event[], action: Action): Event[] {
@@ -211,6 +240,7 @@ function demoFriendIdsReducer(state: string[], action: Action): string[] {
 const initialState: AppState = {
   profile: defaultProfile,
   plan: defaultPlan,
+  city: defaultCity,
   events: DEMO_EVENTS.map((e) => ({ ...e, joinedUserIds: [...e.joinedUserIds] })),
   posts: [],
   demoFriendIds: [],
@@ -239,8 +269,10 @@ function rootReducer(state: AppState, action: Action): AppState {
   return {
     profile: profileReducer(state.profile, action),
     plan: planReducer(state.plan, action),
+    city: cityReducer(state.city, action),
     events: eventsReducer(state.events, action),
     posts: postsReducer(state.posts, action),
+    demoFriendIds: demoFriendIdsReducer(state.demoFriendIds, action),
   };
 }
 
@@ -259,6 +291,9 @@ type StoreContextValue = {
   setActivePlan: (plan: ActivePlan | null) => void;
   clearActivePlan: () => void;
   setOpenPlanModal: (open: boolean) => void;
+  addEventToPlan: (eventId: string) => void;
+  setPendingEventId: (eventId: string | null) => void;
+  setSelectedCity: (cityId: string) => void;
   addDemoFriend: (userId: string) => void;
   removeDemoFriend: (userId: string) => void;
 };
@@ -431,6 +466,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_OPEN_PLAN_MODAL', payload: open });
   }, []);
 
+  const addEventToPlan = useCallback((eventId: string) => {
+    dispatch({ type: 'ADD_EVENT_TO_PLAN', payload: eventId });
+  }, []);
+
+  const setPendingEventId = useCallback((eventId: string | null) => {
+    dispatch({ type: 'SET_PENDING_EVENT', payload: eventId });
+  }, []);
+
+  const setSelectedCity = useCallback((cityId: string) => {
+    dispatch({ type: 'SET_SELECTED_CITY', payload: cityId });
+  }, []);
+
   const addDemoFriend = useCallback((userId: string) => {
     dispatch({ type: 'ADD_DEMO_FRIEND', payload: userId });
   }, []);
@@ -454,6 +501,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setActivePlan,
     clearActivePlan,
     setOpenPlanModal,
+    addEventToPlan,
+    setPendingEventId,
+    setSelectedCity,
     addDemoFriend,
     removeDemoFriend,
   };

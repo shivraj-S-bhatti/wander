@@ -16,7 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { FriendCard } from '../components/FriendCard';
-import { DEMO_USERS } from '../data/demo';
+import { PlanHeaderButton } from '../components/PlanHeaderButton';
+import { DEMO_FRIENDS, DEMO_USERS } from '../data/demo';
 import type { Friend } from '../data/demo';
 import * as friendRequestsApi from '../services/friendRequests';
 import type { FriendRequestReceived } from '../services/friendRequests';
@@ -40,10 +41,25 @@ function apiUserToFriend(u: ApiUser): Friend {
   };
 }
 
+function toFriendWithDemo(u: ApiUser): Friend {
+  const demoUser = DEMO_USERS.find((d) => d.id === u.id);
+  const demoFriend = DEMO_FRIENDS.find((f) => f.id === u.id);
+  return {
+    id: u.id,
+    username: u.username,
+    avatar: demoUser?.avatar,
+    civicScore: demoFriend?.civicScore ?? u.civicPoints ?? 0,
+    streak: demoFriend?.streak ?? u.streak ?? 0,
+    rank: demoFriend?.rank ?? 0,
+  };
+}
+
 export function FriendsScreen() {
   const navigation = useNavigation<FriendsNavProp>();
-  const { state } = useStore();
+  const { state, setOpenPlanModal } = useStore();
   const token = useSelector((s: RootState) => s.auth.token);
+  const hasActivePlan = state.plan.activePlan != null;
+  const onPlanHeaderPress = useCallback(() => setOpenPlanModal(true), [setOpenPlanModal]);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [requests, setRequests] = useState<FriendRequestReceived[]>([]);
@@ -190,14 +206,15 @@ export function FriendsScreen() {
   const friendIds = useMemo(() => new Set(friends.map((f) => f.id)), [friends]);
   const isSearchMode = searchQuery.trim().length > 0;
   const listData: Friend[] = isSearchMode
-    ? searchResults.map(apiUserToFriend)
-    : friends.map(apiUserToFriend);
+    ? searchResults.map(toFriendWithDemo)
+    : friends.map(toFriendWithDemo);
 
-  const bellBadgeCount = requests.length;
+  const bellBadgeCount = token ? requests.length : 1;
 
   return (
     <View style={styles.container}>
       <AppHeader
+        centerElement={<PlanHeaderButton hasActivePlan={hasActivePlan} onPress={onPlanHeaderPress} />}
         rightElement={
           <TouchableOpacity
             onPress={openDropdown}

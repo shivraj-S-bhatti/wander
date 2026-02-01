@@ -24,18 +24,20 @@ type Event = {
 type Props = {
   event: Event;
   joined: boolean;
-  onJoin: () => void;
+  onJoin?: () => void;
+  /** When provided, card press adds to plan or starts plan workflow; otherwise press calls onJoin. */
+  onPress?: () => void;
 };
 
-export function VolunteerCard({ event, joined, onJoin }: Props) {
+export function VolunteerCard({ event, joined, onJoin, onPress }: Props) {
   const imageSource = EVENT_IMAGES[event.id] ?? EVENT_IMAGES.e_1;
+  const handlePress = onPress ?? (() => { if (!joined) onJoin?.(); });
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={joined ? undefined : onJoin}
-      activeOpacity={joined ? 1 : 0.85}
-      disabled={joined}
+      onPress={handlePress}
+      activeOpacity={0.85}
     >
       <ImageBackground source={imageSource} style={styles.image} resizeMode="cover">
         <View style={styles.overlay} />

@@ -2,7 +2,8 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { RouteSheet } from '../components/RouteSheet';
-import { DEMO_ORIGIN, DEMO_PLACES, DEMO_REVIEWS, DEMO_USERS } from '../data/demo';
+import { getCityById, getPlaceById, ALL_REVIEWS } from '../data/cities';
+import { DEMO_USERS } from '../data/demo';
 import { useStore } from '../state/store';
 import { colors } from '../theme';
 import { formatRelative } from '../utils/time';
@@ -13,10 +14,12 @@ type StackParamList = { PlaceDetail: { placeId: string } };
 export function PlaceDetailScreen() {
   const route = useRoute<RouteProp<StackParamList, 'PlaceDetail'>>();
   const nav = useNavigation();
-  const { choosePlace } = useStore();
+  const { choosePlace, state } = useStore();
   const placeId = route.params?.placeId ?? '';
-  const place = DEMO_PLACES.find((p) => p.id === placeId);
-  const reviews = DEMO_REVIEWS.filter((r) => r.placeId === placeId);
+  const place = getPlaceById(placeId);
+  const reviews = ALL_REVIEWS.filter((r) => r.placeId === placeId);
+  const city = getCityById(state.city.selectedCityId);
+  const origin = city?.origin ?? { lat: 37.7812, lng: -122.4112 };
   const [showRoute, setShowRoute] = useState(false);
 
   if (!place) {
@@ -45,7 +48,7 @@ export function PlaceDetailScreen() {
       {showRoute && (
         <View style={styles.sheet}>
           <RouteSheet
-            origin={DEMO_ORIGIN}
+            origin={origin}
             destination={{ lat: place.lat, lng: place.lng }}
             onClose={() => setShowRoute(false)}
           />
@@ -95,6 +98,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 48 },
   name: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
   meta: { fontSize: 14, color: colors.textMuted, marginBottom: 4 },
+  rating: { fontSize: 14, color: colors.accent, marginBottom: 4 },
   price: { fontSize: 14, color: colors.accent, marginBottom: 8 },
   local: { fontSize: 12, color: colors.accent, marginBottom: 16 },
   btn: { backgroundColor: colors.black, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 24 },
