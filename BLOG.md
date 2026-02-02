@@ -17,7 +17,7 @@ We took inspiration from **Strava** (tracking, sharing, streaks) and **Beli** (l
 
 ---
 
-## UI/UX and mobile experiments
+## UI/UX Design:
 
 We ran a single codebase across **Expo (React Native)** and **web**, with platform-specific screens for map and itinerary. Screenshots below (resized, 2–3 per row): Login → Explore → Community feed; volunteering and plans; plan generation → directions → profile; recommendations → friends → leaderboard; post flow.
 
@@ -35,7 +35,7 @@ We ran a single codebase across **Expo (React Native)** and **web**, with platfo
 
 ---
 
-## Technical challenges (non-trivial)
+## Technical challenges:
 
 ### Context management and compaction for low-latency LLM queries
 
@@ -67,9 +67,9 @@ The interesting technical work was **what we send to the LLM and how we keep it 
 
 ---
 
-## Take-aways (engineering wisdom)
+## Take-aways:
 
-- **Design the context before the model.** The biggest lever for LLM latency and cost was *what we didn’t send*—no full post text, no unbounded history. Structured summaries and fixed caps (e.g. last 10 check-ins) made behavior predictable and debuggable.
+- **Design the context before the model.** The biggest lever for LLM latency and cost was *what we didn’t send*—no full post text, no unbounded history. Structured summaries, context engineering (e.g. last 10 check-ins) made behavior predictable.
 - **One entry point, state decides the step.** A single "open plan" action from any screen, with mode derived from `activePlan` and `pendingEventId`, avoided multiple "open form" vs "open view" flows and kept the mental model simple.
 - **Demo-first isn’t a hack—it’s product.** Fallback recommendations and merged demo data meant the app was always usable for demos and interviews; we didn’t hide features behind "no API key."
 - **Split auth from feature state.** Redux for auth (hydration before shell), Context for the rest (parallel hydrate), gave a clear boundary: "can you use the app" vs "what you’re doing in it," and kept feature state out of the auth critical path.
@@ -78,4 +78,4 @@ The interesting technical work was **what we send to the LLM and how we keep it 
 
 ## Try it
 
-Repo: [Wander](https://github.com/shivraj-S-bhatti/wander) (or your actual repo URL). Clone, add API keys (optional; app works with fallbacks), and run `npx expo start --web` or `--ios`. I’m happy to talk through the design and technical choices in interviews.
+Repo: [Wander](https://github.com/shivraj-S-bhatti/wander) (or your actual repo URL). Clone, add API keys (optional; app works with fallbacks), and run `npx expo start --web` or `--ios`.
