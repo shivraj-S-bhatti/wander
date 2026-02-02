@@ -78,4 +78,4 @@ The interesting technical work was **what we send to the LLM and how we keep it 
 
 ## Try it
 
-Repo: [Wander](https://github.com/shivraj-S-bhatti/wander) (or your actual repo URL). Clone, add API keys (optional; app works with fallbacks), and run `npx expo start --web` or `--ios`.
+Repo: [Wander](https://github.com/shivraj-S-bhatti/wander). Clone, add API keys (optional; app works with fallbacks), and run `npx expo start --web` or `--ios`.
