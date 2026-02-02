@@ -19,53 +19,20 @@ We took inspiration from **Strava** (tracking, sharing, streaks) and **Beli** (l
 
 ## UI/UX and mobile experiments
 
-We ran a single codebase across **Expo (React Native)** and **web**, with platform-specific screens for map and itinerary. Here’s how the app feels, with screenshots in order.
+We ran a single codebase across **Expo (React Native)** and **web**, with platform-specific screens for map and itinerary. Screenshots below (resized, 2–3 per row): Login → Explore → Community feed; volunteering and plans; plan generation → directions → profile; recommendations → friends → leaderboard; post flow.
 
-**Login.** First touchpoint: sign-in (and sign-up) before the main app.
-
-![Login](screenshots/login.png)
-
-**Explore — map and places.** Pick a city (San Francisco, Boston, Providence), see places and events on the map, tap for details and "Get there" for directions and cost (transit vs rideshare).
-
-![Explore — San Francisco](screenshots/explore_sanfran.png)
-
-**Community feed.** Check-ins and volunteer events in one feed; join events to earn civic points.
-
-![Community feed](screenshots/community_feed.png)
-
-**Volunteering and plans.** Plans can include volunteer events. We experimented with surfacing "volunteer day out" options and an active plan that mixes places and community events.
-
-![Volunteer plan](screenshots/volunteer_plan.png)
-
-![Volunteer day out](screenshots/volunteer_day_out.png)
-
-![Active plan with volunteering](screenshots/active_plan_with_volunteering.png)
-
-**Plan generation.** One modal, three modes: form (location, vibe, budget, hours) → generated options (with cross-out) → view plan. Here, generating options for Boston.
-
-![Boston plan generation](screenshots/boston_plan_generation.png)
-
-**Directions and cost.** "Get there" shows driving and transit options and surfaces cost (rideshare estimate, fixed transit cost) so users can choose.
-
-![Review directions](screenshots/review_directions.png)
-
-**Profile — gamification.** Points, level, badges (unlocked by thresholds), and progress to the next badge.
-
-![Profile gamification](screenshots/profile_gamefication.png)
-
-**Tonight’s recommendations.** AI-suggested places (Gemini or fallback) based on preferences and friend activity.
-
-![Profile recommendations](screenshots/profile_reccomendations.png)
-
-**Friends and leaderboard.** Friends list and a leaderboard by civic score so the social and competitive angles stay visible.
-
-![Friends](screenshots/friends.png)
-
-![Leaderboard](screenshots/leaderboard.png)
-
-**Post flow.** After a check-in (e.g. post-hackathon), users can log what they did, who they were with, and tag the experience—feeding back into recommendations and streaks.
-
-![Post (e.g. after hackathon check-in)](screenshots/post_hack.png)
+| | | |
+|:---:|:---:|:---:|
+| <img src="screenshots/login.png" width="280" alt="Login"> | <img src="screenshots/explore_sanfran.png" width="280" alt="Explore — San Francisco"> | <img src="screenshots/community_feed.png" width="280" alt="Community feed"> |
+| **Login** | **Explore** | **Community feed** |
+| <img src="screenshots/volunteer_plan.png" width="280" alt="Volunteer plan"> | <img src="screenshots/volunteer_day_out.png" width="280" alt="Volunteer day out"> | <img src="screenshots/active_plan_with_volunteering.png" width="280" alt="Active plan with volunteering"> |
+| **Volunteer plan** | **Volunteer day out** | **Active plan** |
+| <img src="screenshots/boston_plan_generation.png" width="280" alt="Boston plan generation"> | <img src="screenshots/review_directions.png" width="280" alt="Review directions"> | <img src="screenshots/profile_gamefication.png" width="280" alt="Profile gamification"> |
+| **Plan generation** | **Directions** | **Profile** |
+| <img src="screenshots/profile_reccomendations.png" width="280" alt="Profile recommendations"> | <img src="screenshots/friends.png" width="280" alt="Friends"> | <img src="screenshots/leaderboard.png" width="280" alt="Leaderboard"> |
+| **Recommendations** | **Friends** | **Leaderboard** |
+| <img src="screenshots/post_hack.png" width="280" alt="Post flow"> | | |
+| **Post flow** | | |
 
 ---
 
