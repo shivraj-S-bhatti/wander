@@ -25,8 +25,8 @@ We ran a single codebase across **Expo (React Native)** and **web**, with platfo
 |:---:|:---:|:---:|
 | <img src="screenshots/login.png" width="280" alt="Login"> | <img src="screenshots/explore_sanfran.png" width="280" alt="Explore — San Francisco"> | <img src="screenshots/community_feed.png" width="280" alt="Community feed"> |
 | **Login** | **Explore** | **Community feed** |
-| <img src="screenshots/volunteer_plan.png" width="280" alt="Volunteer plan"> | <img src="screenshots/volunteer_day_out.png" width="280" alt="Volunteer day out"> | <img src="screenshots/active_plan_with_volunteering.png" width="280" alt="Active plan with volunteering"> |
-| **Volunteer plan** | **Volunteer day out** | **Active plan** |
+| <img src="screenshots/volunteer_day_out.png" width="280" alt="Volunteering Outing"> | <img src="screenshots/active_plan_with_volunteering.png" width="280" alt="Active plan with volunteering"> | |
+| **Volunteering Outing** | **Active plan** | |
 | <img src="screenshots/boston_plan_generation.png" width="280" alt="Boston plan generation"> | <img src="screenshots/review_directions.png" width="280" alt="Review directions"> | <img src="screenshots/profile_gamefication.png" width="280" alt="Profile gamification"> |
 | **Plan generation** | **Directions** | **Profile** |
 | <img src="screenshots/profile_reccomendations.png" width="280" alt="Profile recommendations"> | <img src="screenshots/friends.png" width="280" alt="Friends"> | <img src="screenshots/leaderboard.png" width="280" alt="Leaderboard"> |
