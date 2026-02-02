@@ -2,6 +2,8 @@
 
 **Wander is Strava for joymaxxing:** track where you go and who you’re with, share outings with friends, earn points for community involvement, and get AI-powered suggestions so you can maximize real-world joy instead of just miles.
 
+📝 **[Blog: UI/UX & engineering deep dive](BLOG.md)** — screenshots, technical challenges, LLM context design, take-aways.
+
 ---
 
 ## What it is (Strava for joymaxxing)
@@ -15,6 +17,8 @@ Wander is a **social life-logging and discovery app** focused on **maximizing re
 - **Plan** — AI-generated day plans (itineraries) from your vibe, budget, and hours outside.
 
 So: **Strava for joymaxxing** = track and share life satisfaction, not just fitness; earn rewards for community; use AI to plan better outings.
+
+**Read more:** [Blog — UI/UX and mobile dev deep dive](BLOG.md) (screenshots, technical challenges, context management for LLM).
 
 ---
 
