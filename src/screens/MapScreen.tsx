@@ -29,25 +29,52 @@ const getInitialRegion = (lat: number, lng: number) => ({
 
 const HOME_MARKER_COLOR = '#2563EB'; // blue — distinct from red accent and green events
 
+const CELEBRATION_DURATION_MS = 3500;
+
 export function MapScreen() {
   const nav = useNavigation();
-  const { state, setOpenPlanModal, setSelectedCity } = useStore();
+  const { state, setOpenPlanModal, setSelectedCity, clearRecentPostLocation } = useStore();
   const glowAnim = useRef(new Animated.Value(0.4)).current;
   const hasActivePlan = state.plan.activePlan != null;
   const selectedCityId = state.city.selectedCityId;
+  const recentPostLocation = state.city.recentPostLocation;
   const city = getCityById(selectedCityId) ?? getCityById('san_francisco')!;
   const mapRef = useRef<MapView>(null);
+  const burstAnim = useRef(new Animated.Value(0)).current;
 
   const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
   const [listSearch, setListSearch] = useState('');
   const [routeDestination, setRouteDestination] = useState<{ lat: number; lng: number } | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
+    if (recentPostLocation) setViewMode('map');
+  }, [recentPostLocation]);
+
+  useEffect(() => {
+    if (!recentPostLocation || !mapReady || !mapRef.current) return;
+    const region = getInitialRegion(recentPostLocation.lat, recentPostLocation.lng);
+    mapRef.current.animateToRegion(region, 400);
+    setShowCelebration(true);
+    burstAnim.setValue(0);
+    Animated.timing(burstAnim, {
+      toValue: 1,
+      duration: 2000,
+      useNativeDriver: true,
+    }).start();
+    const t = setTimeout(() => {
+      clearRecentPostLocation();
+      setShowCelebration(false);
+    }, CELEBRATION_DURATION_MS);
+    return () => clearTimeout(t);
+  }, [recentPostLocation, mapReady, clearRecentPostLocation, burstAnim]);
+
+  useEffect(() => {
+    if (recentPostLocation || !mapReady || !mapRef.current) return;
     const region = getInitialRegion(city.center.lat, city.center.lng);
     mapRef.current.animateToRegion(region, 400);
-  }, [selectedCityId, mapReady, city.center.lat, city.center.lng]);
+  }, [selectedCityId, mapReady, city.center.lat, city.center.lng, recentPostLocation]);
 
   const listPlaces = listSearch.trim()
     ? city.places.filter(
@@ -133,7 +160,52 @@ export function MapScreen() {
                   tracksViewChanges={false}
                 />
               ))}
+              {recentPostLocation && (
+                <Marker
+                  key="celebration"
+                  identifier="celebration"
+                  coordinate={{ latitude: recentPostLocation.lat, longitude: recentPostLocation.lng }}
+                  title="Posted here!"
+                  pinColor={colors.accent}
+                  tracksViewChanges={false}
+                />
+              )}
             </MapView>
+            {showCelebration && (
+              <View style={styles.celebrationOverlay} pointerEvents="none">
+                {Array.from({ length: 16 }, (_, i) => {
+                  const angle = (i / 16) * 2 * Math.PI;
+                  const translateY = burstAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -70],
+                  });
+                  const opacity = burstAnim.interpolate({
+                    inputRange: [0, 0.7, 1],
+                    outputRange: [1, 0.6, 0],
+                  });
+                  const scale = burstAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.3, 1.2],
+                  });
+                  return (
+                    <Animated.View
+                      key={i}
+                      style={[
+                        styles.celebrationDot,
+                        {
+                          transform: [
+                            { rotate: `${angle}rad` },
+                            { translateY },
+                            { scale },
+                          ],
+                          opacity,
+                        },
+                      ]}
+                    />
+                  );
+                })}
+              </View>
+            )}
           </View>
           {!hasActivePlan ? (
             <TouchableOpacity style={styles.fab} onPress={() => setOpenPlanModal(true)} accessibilityLabel="Plan my day" accessibilityRole="button">
@@ -211,4 +283,16 @@ const styles = StyleSheet.create({
     maxHeight: '40%',
   },
   dismiss: { color: colors.accent, textAlign: 'center', marginTop: 8, fontWeight: '600' },
+  celebrationOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  celebrationDot: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+  },
 });

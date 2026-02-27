@@ -74,6 +74,15 @@ export type Friend = {
   rank: number;
 };
 
+/** Demo friend requests shown in Friends tab (accept/decline only update local state). */
+export type DemoFriendRequest = {
+  id: string;
+  fromUserId: string;
+  fromUsername: string;
+  status: string;
+  createdAt: string;
+};
+
 const now = Date.now();
 const hour = 60 * 60 * 1000;
 const day = 24 * hour;
@@ -213,6 +222,12 @@ export const DEMO_FRIENDS: Friend[] = [
   { id: 'u_4', username: 'Riley', avatar: 'gal1', civicScore: 190, streak: 3, rank: 4 },
   { id: 'u_5', username: 'Casey', avatar: 'gal2', civicScore: 165, streak: 2, rank: 5 },
   { id: 'u_6', username: 'Morgan', avatar: 'gal3', civicScore: 120, streak: 1, rank: 6 },
+];
+
+/** Demo friend requests for Friends tab (accept/decline only update local state). */
+export const DEMO_FRIEND_REQUESTS: DemoFriendRequest[] = [
+  { id: 'demo_fr_1', fromUserId: 'u_1', fromUsername: 'Alex', status: 'pending', createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
+  { id: 'demo_fr_2', fromUserId: 'u_2', fromUsername: 'Sam', status: 'pending', createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString() },
 ];
 
 export const CURRENT_USER_ID = 'u_me';

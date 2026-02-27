@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { FriendCard } from '../components/FriendCard';
-import { DEMO_FRIENDS, DEMO_USERS } from '../data/demo';
+import { DEMO_FRIEND_REQUESTS, DEMO_FRIENDS, DEMO_USERS } from '../data/demo';
 import type { Friend } from '../data/demo';
 import * as friendRequestsApi from '../services/friendRequests';
 import type { FriendRequestReceived } from '../services/friendRequests';
@@ -73,6 +73,7 @@ export function FriendsScreen() {
   const [requests, setRequests] = useState<FriendRequestReceived[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [actingId, setActingId] = useState<string | null>(null);
+  const [dismissedDemoRequestIds, setDismissedDemoRequestIds] = useState<Set<string>>(new Set());
 
   const [apiFriends, setApiFriends] = useState<ApiUser[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
@@ -168,8 +169,17 @@ export function FriendsScreen() {
     loadRequests();
   }, [loadRequests]);
 
+  const displayRequests: FriendRequestReceived[] = useMemo(() => {
+    const demoShown = DEMO_FRIEND_REQUESTS.filter((r) => !dismissedDemoRequestIds.has(r.id));
+    return [...demoShown, ...requests];
+  }, [dismissedDemoRequestIds, requests]);
+
   const accept = useCallback(
     async (id: string) => {
+      if (id.startsWith('demo_')) {
+        setDismissedDemoRequestIds((prev) => new Set(prev).add(id));
+        return;
+      }
       if (!token) return;
       setActingId(id);
       try {
@@ -185,6 +195,10 @@ export function FriendsScreen() {
 
   const decline = useCallback(
     async (id: string) => {
+      if (id.startsWith('demo_')) {
+        setDismissedDemoRequestIds((prev) => new Set(prev).add(id));
+        return;
+      }
       if (!token) return;
       setActingId(id);
       try {
@@ -217,7 +231,7 @@ export function FriendsScreen() {
     ? searchResults.map((u, i) => toFriendWithAvatarByIndex(u, i))
     : friends.map((u, i) => toFriendWithAvatarByIndex(u, i));
 
-  const bellBadgeCount = token ? requests.length : 1;
+  const bellBadgeCount = token ? displayRequests.length : displayRequests.length || 1;
 
   return (
     <View style={styles.container}>
@@ -252,10 +266,10 @@ export function FriendsScreen() {
             <Text style={styles.dropdownTitle}>Friend requests</Text>
             {requestsLoading ? (
               <ActivityIndicator style={styles.dropdownLoader} color={colors.accent} />
-            ) : requests.length === 0 ? (
+            ) : displayRequests.length === 0 ? (
               <Text style={styles.dropdownEmpty}>No pending requests</Text>
             ) : (
-              requests.map((r) => (
+              displayRequests.map((r) => (
                 <View key={r.id} style={styles.requestRow}>
                   <Text style={styles.requestUsername} numberOfLines={1}>
                     {r.fromUsername ?? 'Unknown'}

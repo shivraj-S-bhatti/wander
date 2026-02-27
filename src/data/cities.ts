@@ -21,6 +21,9 @@ export type City = {
   events: Event[];
 };
 
+/** Brown University (Providence) — used for "At my location" post celebration. */
+export const BROWN_UNIVERSITY_COORDS = { lat: 41.8262, lng: -71.4032 };
+
 // ——— San Francisco (existing demo data)
 const SF_PLACES: Place[] = [
   { id: 'p_1', name: 'The Hive Coffee', category: 'cafe', lat: 37.7849, lng: -122.4094, priceTier: 2, tags: ['coffee', 'wifi', 'chill'], isLocalBusiness: true, averageRating: 4.8 },

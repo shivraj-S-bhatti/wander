@@ -11,11 +11,13 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSelector } from 'react-redux';
 import { AppHeader } from '../components/AppHeader';
 import { MonthCalendar } from '../components/MonthCalendar';
+import { BROWN_UNIVERSITY_COORDS } from '../data/cities';
 import { DEMO_USERS } from '../data/demo';
 import * as usersApi from '../services/users';
 import type { ApiUser } from '../services/users';
@@ -39,7 +41,8 @@ function startOfDay(ts: number): number {
 type SelectedFriend = { id: string; username: string };
 
 export function MakePostScreen() {
-  const { addPost, state } = useStore();
+  const navigation = useNavigation();
+  const { addPost, state, setRecentPostLocation, setSelectedCity } = useStore();
   const token = useSelector((s: RootState) => s.auth.token);
   const [what, setWhat] = useState('');
   const [whoWith, setWhoWith] = useState('');
@@ -57,6 +60,7 @@ export function MakePostScreen() {
   const [pointsToast, setPointsToast] = useState(false);
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [placeName, setPlaceName] = useState('');
+  const [atMyLocation, setAtMyLocation] = useState(false);
 
   const demoFriendsAsApiUsers: ApiUser[] = useMemo(() => {
     const ids = state?.demoFriendIds ?? [];
@@ -144,6 +148,7 @@ export function MakePostScreen() {
         ? selectedFriends.map((f) => f.username).join(', ')
         : whoWith.trim();
     const noonOnSelected = selectedDateTs + 12 * 60 * 60 * 1000;
+    const resolvedPlaceName = atMyLocation ? 'Brown University' : (placeName.trim() || undefined);
     addPost(
       {
         what: what.trim(),
@@ -153,7 +158,7 @@ export function MakePostScreen() {
         imageUris,
         tags,
         hoursSpent,
-        placeName: placeName.trim() || undefined,
+        placeName: resolvedPlaceName,
         badges: ['Local business'],
       },
       noonOnSelected
@@ -169,9 +174,16 @@ export function MakePostScreen() {
     setTags([]);
     setImageUris([]);
     setPlaceName('');
+    setAtMyLocation(false);
     setSelectedDateTs(startOfDay(Date.now()));
     setTimeout(() => setSaved(false), 2000);
     setTimeout(() => setPointsToast(false), 2500);
+
+    if (atMyLocation) {
+      setRecentPostLocation(BROWN_UNIVERSITY_COORDS);
+      setSelectedCity('providence');
+      (navigation.getParent() as { navigate: (name: string, params?: { screen: string }) => void } | undefined)?.navigate('MainTabs', { screen: 'Explore' });
+    }
   };
 
   const { width } = useWindowDimensions();
@@ -197,7 +209,18 @@ export function MakePostScreen() {
           onChangeText={setPlaceName}
           placeholder="e.g. The Hive Coffee"
           placeholderTextColor={colors.placeholder}
+          editable={!atMyLocation}
         />
+        <TouchableOpacity
+          style={styles.checkboxRow}
+          onPress={() => setAtMyLocation((prev) => !prev)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.checkbox, atMyLocation && styles.checkboxChecked]}>
+            {atMyLocation ? <Ionicons name="checkmark" size={16} color={colors.white} /> : null}
+          </View>
+          <Text style={styles.checkboxLabel}>Making it at my location (Brown University)</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.section}>
         <Text style={styles.label}>Who with?</Text>
@@ -439,6 +462,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 10,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    color: colors.black,
+    flex: 1,
   },
   whoDropdownTrigger: {
     flexDirection: 'row',

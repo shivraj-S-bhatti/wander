@@ -22,9 +22,10 @@ type Props = {
   onPress?: () => void;
   isFriend?: boolean;
   onAddFriend?: (userId: string) => void;
+  onDelete?: () => void;
 };
 
-export function PostCard({ post, onPress, isFriend, onAddFriend }: Props) {
+export function PostCard({ post, onPress, isFriend, onAddFriend, onDelete }: Props) {
   const user = DEMO_USERS.find((u) => u.id === post.userId);
   const userName = user?.name ?? 'Someone';
   const faceSrc = getFaceSource(user?.avatar);
@@ -35,6 +36,19 @@ export function PostCard({ post, onPress, isFriend, onAddFriend }: Props) {
 
   const content = (
     <View style={styles.card}>
+      {onDelete != null && (
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onDelete();
+          }}
+          accessibilityLabel="Delete post"
+          accessibilityRole="button"
+        >
+          <Ionicons name="trash-outline" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+      )}
       <View style={styles.row}>
         <View style={styles.avatarWrap}>
           {faceSrc != null ? (
@@ -127,10 +141,18 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     shadowColor: colors.shadow,
+    position: 'relative',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+  },
+  deleteBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    padding: 6,
   },
   row: {
     flexDirection: 'row',

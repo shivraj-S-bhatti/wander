@@ -22,7 +22,7 @@ type FeedItem =
 
 export function CommunityScreen() {
   const navigation = useNavigation<CommunityNavProp>();
-  const { state, joinEvent, addDemoFriend, setOpenPlanModal, setPendingEventId } = useStore();
+  const { state, joinEvent, addDemoFriend, setOpenPlanModal, setPendingEventId, deletePost } = useStore();
   const events = state.events;
   const demoFriendIds = state?.demoFriendIds ?? [];
   const [pointsToast, setPointsToast] = useState<number | null>(null);
@@ -49,9 +49,7 @@ export function CommunityScreen() {
       ts: c.ts,
       data: c,
     }));
-    const postItems: FeedItem[] = state.posts
-      .filter((p) => p.userId !== CURRENT_USER_ID)
-      .map((p) => ({
+    const postItems: FeedItem[] = state.posts.map((p) => ({
         type: 'post' as const,
         id: p.id,
         ts: p.ts,
@@ -77,6 +75,9 @@ export function CommunityScreen() {
           isFriend={demoFriendIds.includes(item.data.userId)}
           onAddFriend={
             item.data.userId !== 'u_me' ? () => addDemoFriend(item.data.userId) : undefined
+          }
+          onDelete={
+            item.data.userId === 'u_me' ? () => deletePost(item.data.id) : undefined
           }
         />
       );

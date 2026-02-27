@@ -57,6 +57,7 @@ type PlanState = {
 
 type CityState = {
   selectedCityId: string;
+  recentPostLocation: { lat: number; lng: number } | null;
 };
 
 const defaultPlan: PlanState = {
@@ -67,6 +68,7 @@ const defaultPlan: PlanState = {
 
 const defaultCity: CityState = {
   selectedCityId: 'san_francisco',
+  recentPostLocation: null,
 };
 
 const defaultProfile: ProfileState = {
@@ -110,7 +112,9 @@ type Action =
   | { type: 'ADD_DEMO_FRIEND'; payload: string }
   | { type: 'REMOVE_DEMO_FRIEND'; payload: string }
   | { type: 'LOAD_DEMO_FRIENDS'; payload: string[] }
-  | { type: 'SET_SELECTED_CITY'; payload: string };
+  | { type: 'SET_SELECTED_CITY'; payload: string }
+  | { type: 'SET_RECENT_POST_LOCATION'; payload: { lat: number; lng: number } | null }
+  | { type: 'DELETE_POST'; payload: string };
 
 function profileReducer(state: ProfileState, action: Action): ProfileState {
   switch (action.type) {
@@ -203,6 +207,7 @@ function planReducer(state: PlanState, action: Action): PlanState {
 
 function cityReducer(state: CityState, action: Action): CityState {
   if (action.type === 'SET_SELECTED_CITY') return { ...state, selectedCityId: action.payload };
+  if (action.type === 'SET_RECENT_POST_LOCATION') return { ...state, recentPostLocation: action.payload };
   return state;
 }
 
@@ -266,6 +271,7 @@ function postsReducer(state: Post[], action: Action): Post[] {
     }));
   }
   if (action.type === 'ADD_POST') return [action.payload, ...state];
+  if (action.type === 'DELETE_POST') return state.filter((p) => p.id !== action.payload);
   return state;
 }
 
@@ -287,6 +293,7 @@ type StoreContextValue = {
   setPrefs: (prefs: Partial<ProfilePrefs>) => void;
   choosePlace: (place: Place) => void;
   addPost: (post: Omit<Post, 'id' | 'userId' | 'ts'>, ts?: number) => void;
+  deletePost: (postId: string) => void;
   refreshRecs: (geminiKey?: string) => Promise<void>;
   getBadges: () => { label: string; unlocked: boolean }[];
   getLevel: () => number;
@@ -298,6 +305,8 @@ type StoreContextValue = {
   addEventToPlan: (eventId: string) => void;
   setPendingEventId: (eventId: string | null) => void;
   setSelectedCity: (cityId: string) => void;
+  setRecentPostLocation: (location: { lat: number; lng: number } | null) => void;
+  clearRecentPostLocation: () => void;
   addDemoFriend: (userId: string) => void;
   removeDemoFriend: (userId: string) => void;
 };
@@ -315,8 +324,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (profile?.joinedEventIds?.length) dispatch({ type: 'MERGE_JOINED_INTO_EVENTS', joinedEventIds: profile.joinedEventIds });
     });
     loadPosts().then((list) => {
-      const posts = list.length > 0 ? list : DEMO_POSTS_CURRENT_USER;
-      dispatch({ type: 'LOAD_POSTS', payload: posts });
+      let posts = list.length > 0 ? list : DEMO_POSTS_CURRENT_USER;
+      // Remove warmup Brown post if user created one (placeName Brown + "warmup" in text)
+      const filtered = posts.filter(
+        (p) =>
+          !(
+            ('placeName' in p && p.placeName === 'Brown University') &&
+            (p.what || '').toLowerCase().includes('warmup')
+          )
+      );
+      if (filtered.length !== posts.length) savePosts(filtered);
+      dispatch({ type: 'LOAD_POSTS', payload: filtered });
     });
     loadPlan().then((p) => dispatch({ type: 'LOAD_PLAN', payload: p }));
     loadDemoFriends().then((ids) => dispatch({ type: 'LOAD_DEMO_FRIENDS', payload: ids }));
@@ -352,6 +370,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       imageUris: p.imageUris ?? [],
       tags: p.tags ?? [],
       hoursSpent: p.hoursSpent,
+      ...(p.placeName != null && { placeName: p.placeName }),
     }));
     if (toStore.length > 0) savePosts(toStore);
   }, [state.posts]);
@@ -380,6 +399,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ts: ts ?? Date.now(),
     };
     dispatch({ type: 'ADD_POST', payload: full });
+  }, []);
+
+  const deletePost = useCallback((postId: string) => {
+    dispatch({ type: 'DELETE_POST', payload: postId });
   }, []);
 
   const refreshRecs = useCallback(async (geminiKey?: string) => {
@@ -487,6 +510,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_SELECTED_CITY', payload: cityId });
   }, []);
 
+  const setRecentPostLocation = useCallback((location: { lat: number; lng: number } | null) => {
+    dispatch({ type: 'SET_RECENT_POST_LOCATION', payload: location });
+  }, []);
+
+  const clearRecentPostLocation = useCallback(() => {
+    dispatch({ type: 'SET_RECENT_POST_LOCATION', payload: null });
+  }, []);
+
   const addDemoFriend = useCallback((userId: string) => {
     dispatch({ type: 'ADD_DEMO_FRIEND', payload: userId });
   }, []);
@@ -502,6 +533,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setPrefs,
     choosePlace,
     addPost,
+    deletePost,
     refreshRecs,
     getBadges,
     getLevel,
@@ -513,6 +545,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addEventToPlan,
     setPendingEventId,
     setSelectedCity,
+    setRecentPostLocation,
+    clearRecentPostLocation,
     addDemoFriend,
     removeDemoFriend,
   };

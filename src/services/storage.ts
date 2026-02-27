@@ -39,6 +39,7 @@ export type StoredPost = {
   imageUris: string[];
   tags: string[];
   hoursSpent?: number;
+  placeName?: string;
 };
 
 export async function loadPosts(): Promise<StoredPost[]> {

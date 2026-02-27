@@ -43,19 +43,29 @@ declare global {
   }
 }
 
+const CELEBRATION_DURATION_MS = 3500;
+
 export function MapScreen() {
   const nav = useNavigation();
-  const { state, setOpenPlanModal, setSelectedCity } = useStore();
+  const { state, setOpenPlanModal, setSelectedCity, clearRecentPostLocation } = useStore();
   const selectedCityId = state.city.selectedCityId;
+  const recentPostLocation = state.city.recentPostLocation;
   const city = getCityById(selectedCityId) ?? getCityById('san_francisco')!;
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<GoogleMapInstance | null>(null);
   const markersRef = useRef<GoogleMarkerInstance[]>([]);
+  const celebrationMarkerRef = useRef<GoogleMarkerInstance | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('map');
   const [listSearch, setListSearch] = useState('');
   const [mapReady, setMapReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   const hasActivePlan = state.plan.activePlan != null;
+
+  // When recentPostLocation is set, switch to map view so the celebration is visible
+  useEffect(() => {
+    if (recentPostLocation) setViewMode('map');
+  }, [recentPostLocation]);
 
   const listPlaces = listSearch.trim()
     ? city.places.filter(
@@ -206,6 +216,45 @@ export function MapScreen() {
     });
   }, [selectedCityId, viewMode, city, nav]);
 
+  // Celebration: when recentPostLocation is set and map is ready, add marker + overlay, then clear after delay
+  useEffect(() => {
+    if (!recentPostLocation || !mapReady || !mapInstanceRef.current || !window.google?.maps) return;
+    const map = mapInstanceRef.current as GoogleMapInstance & { setCenter: (c: { lat: number; lng: number }) => void };
+    const g = window.google.maps;
+
+    map.setCenter({ lat: recentPostLocation.lat, lng: recentPostLocation.lng });
+
+    const celebrationMarker = new g.Marker({
+      position: { lat: recentPostLocation.lat, lng: recentPostLocation.lng },
+      map: mapInstanceRef.current,
+      title: 'Posted here!',
+      icon: {
+        path: g.SymbolPath.CIRCLE,
+        scale: 14,
+        fillColor: colors.accent,
+        fillOpacity: 1,
+        strokeColor: '#c41e1e',
+        strokeWeight: 3,
+      },
+    });
+    celebrationMarkerRef.current = celebrationMarker;
+
+    setShowCelebration(true);
+
+    const t = setTimeout(() => {
+      celebrationMarkerRef.current?.setMap(null);
+      celebrationMarkerRef.current = null;
+      clearRecentPostLocation();
+      setShowCelebration(false);
+    }, CELEBRATION_DURATION_MS);
+
+    return () => {
+      clearTimeout(t);
+      celebrationMarkerRef.current?.setMap(null);
+      celebrationMarkerRef.current = null;
+    };
+  }, [recentPostLocation, mapReady, clearRecentPostLocation]);
+
   if (loadError) {
     return (
       <View style={styles.container}>
@@ -259,6 +308,42 @@ export function MapScreen() {
           <View style={styles.mapWrap}>
             <CityBar selectedCityId={selectedCityId} onCityChange={setSelectedCity} />
             <div ref={mapRef} style={styles.mapDiv} />
+            {showCelebration && (
+              <div style={styles.celebrationOverlay} aria-hidden>
+                <style>{`
+                  @keyframes celebrationBurst {
+                    0% { opacity: 1; transform: rotate(var(--angle)) translateY(0) scale(0.4); }
+                    100% { opacity: 0; transform: rotate(var(--angle)) translateY(-90px) scale(1.2); }
+                  }
+                  .celebration-dot {
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    width: 10px;
+                    height: 10px;
+                    margin-left: -5px;
+                    margin-top: -5px;
+                    border-radius: 5px;
+                    background: #FF4136;
+                    animation: celebrationBurst 2.2s ease-out forwards;
+                    pointer-events: none;
+                  }
+                `}</style>
+                {Array.from({ length: 28 }, (_, i) => {
+                  const angleDeg = (i / 28) * 360;
+                  return (
+                    <div
+                      key={i}
+                      className="celebration-dot"
+                      style={{
+                        ['--angle' as string]: `${angleDeg}deg`,
+                        animationDelay: `${i * 0.04}s`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
             {!mapReady && (
               <View style={styles.loading}>
                 <Text style={styles.loadingText}>Loading map…</Text>
@@ -309,6 +394,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  celebrationOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loading: {
     ...StyleSheet.absoluteFillObject,
